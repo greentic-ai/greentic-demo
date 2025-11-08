@@ -1,7 +1,15 @@
 [package]
 name = "greentic-demo"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2024"
+license = "MIT"
+description = "NATS-to-Greentic runner bridge that powers the greentic-demo messaging flow."
+homepage = "https://greentic.ai"
+repository = "https://github.com/greentic-ai/greentic-demo"
+documentation = "https://docs.greentic.ai"
+readme = "README.md"
+keywords = ["greentic", "bot", "nats", "runner"]
+categories = ["command-line-utilities", "network-programming"]
 
 [lib]
 path = "src/lib.rs"
@@ -12,29 +20,25 @@ path = "cmd/greentic-demo/main.rs"
 
 [dependencies]
 anyhow = "1.0"
-async-nats = "0.37"
+async-nats = "0.45"
 chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["derive", "env"] }
 dotenvy = "0.15"
 futures = "0.3"
-greentic-runner-host = { path = "crates/greentic-runner-host" }
-nkeys = "0.3"
+greentic-runner-host = { version = "0.1.0", path = "crates/greentic-runner-host" }
+nkeys = "0.4"
 parking_lot = "0.12"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-thiserror = "1.0"
+thiserror = "2"
 tokio = { version = "1.37", features = ["macros", "rt-multi-thread", "signal", "fs"] }
 tokio-stream = "0.1"
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
-greentic-telemetry = { path = "../greentic-telemetry" }
+greentic-telemetry = "0.3"
 uuid = { version = "1.8", features = ["serde", "v4"] }
 
 [dev-dependencies]
 serde_json = "1.0"
 tokio = { version = "1.37", features = ["macros", "rt-multi-thread"] }
-
-[patch.crates-io]
-greentic-types = { path = "../greentic-types" }
-greentic-interfaces = { path = "../greentic-interfaces" }

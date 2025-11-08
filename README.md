@@ -76,3 +76,59 @@ At runtime the binary resolves each secret by first checking env vars, then `GRE
 ```
 
 See `docs/quickstart.md` for full instructions, subject naming, and tenant onboarding. Run `ci/local_check.sh` before pushing to mirror the GitHub Actions pipeline.
+
+## End-to-End With greentic-webchat
+
+1. **Start the messaging stack**  
+   In [`greentic-messaging`](../greentic-messaging) run `make stack-up`. This launches NATS/JetStream plus the token helper used by webchat.
+
+2. **Prepare tenants**  
+   Each folder under `packs/` must contain `index.ygtc` (the pack) and `bindings.yaml`. Make sure every secret listed under `flow_type_bindings.messaging.secrets` also appears in `RUNNER_ALLOWED_SECRETS`/`--allowed-secrets`.
+
+3. **Run this bridge**  
+   ```bash
+   export RUNNER_ALLOWED_SECRETS=TELEGRAM_BOT_TOKEN
+   cargo run --bin greentic-demo -- --dev --packs-dir ./packs --allowed-secrets TELEGRAM_BOT_TOKEN
+   ```
+   The process loads packs, subscribes to `messaging.activities.in.<tenant>`, and publishes replies to `.out.<tenant>`, while the health monitor logs ingress/egress/error totals every 30s.
+
+4. **Launch greentic-webchat**  
+   In [`greentic-webchat`](../greentic-webchat):
+   ```bash
+   pnpm install
+   pnpm dev
+   ```
+   Open the dev server (default `http://localhost:4173`) and supply a token from the helper endpoint, e.g. `http://localhost:8787/token?tenant=customera`. For hosted demos, use `https://demo.greentic.ai/token?tenant=<tenant>`.
+
+5. **Chat through the loop**  
+   Webchat sends Activities to `messaging.activities.in.<tenant>`, greentic-demo forwards them into `greentic-runner`, flows execute, and replies emerge on `messaging.activities.out.<tenant>` before rendering back in the browser.
+
+To target alternate subjects or deployments, adjust `--subject-prefix`, NATS credentials, or the token endpoint accordingly.
+
+## Installing From crates.io
+
+Once the crate is published you can install the bridge directly from crates.io:
+
+```bash
+cargo install greentic-demo
+```
+
+At runtime you still need to provide packs and bindings locally:
+
+```bash
+greentic-demo \
+  --packs-dir ./packs \
+  --allowed-secrets TELEGRAM_BOT_TOKEN
+```
+
+For prod deployments export the required secrets and subject prefixes:
+
+```bash
+export NATS_URL=nats://nats.internal:4222
+export NATS_JWT=$(greentic-secrets read demo.nats.jwt)
+export NATS_SEED=$(greentic-secrets read demo.nats.seed)
+export RUNNER_ALLOWED_SECRETS=TELEGRAM_BOT_TOKEN
+greentic-demo --packs-dir /var/lib/packs
+```
+
+Remember to rerun `ci/local_check.sh` (fmt/clippy/test + `cargo package` dry-runs) before publishing a new crate version.

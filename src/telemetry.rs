@@ -1,22 +1,19 @@
 use std::collections::HashMap;
 
 use anyhow::{Context, Result};
+use greentic_telemetry::{OtlpConfig, init_otlp};
 use serde::Deserialize;
 
 use crate::config::{TelemetryConfig, TelemetrySource};
 
 pub struct TelemetryHandle;
 
-impl Drop for TelemetryHandle {
-    fn drop(&mut self) {
-        greentic_telemetry::shutdown();
-    }
-}
-
 #[derive(Debug, Deserialize)]
 struct TelemetryPayload {
     #[serde(default)]
     service_name: Option<String>,
+    #[serde(default)]
+    sampling: Option<f64>,
     #[serde(default)]
     otlp: Option<OtlpPayload>,
 }
@@ -44,36 +41,40 @@ pub fn init(config: &TelemetryConfig) -> Result<Option<TelemetryHandle>> {
             let service_name = settings
                 .service_name
                 .unwrap_or_else(|| "greentic-demo".to_string());
-            set_env("SERVICE_NAME", &service_name);
 
-            if let Some(otlp) = settings.otlp {
-                if let Some(endpoint) = otlp.endpoint {
-                    set_env("OTEL_EXPORTER_OTLP_ENDPOINT", endpoint);
-                }
-
-                if let Some(headers) = otlp.headers {
+            if let Some(otlp) = settings.otlp.as_ref() {
+                if let Some(headers) = &otlp.headers {
                     let header_str = headers
-                        .into_iter()
+                        .iter()
                         .map(|(k, v)| format!("{k}={v}"))
                         .collect::<Vec<_>>()
                         .join(",");
                     if !header_str.is_empty() {
-                        set_env("OTEL_EXPORTER_OTLP_HEADERS", header_str);
+                        // SAFETY: setting process env vars is safe within this process.
+                        unsafe {
+                            std::env::set_var("OTEL_EXPORTER_OTLP_HEADERS", header_str);
+                        }
                     }
                 }
             }
 
-            greentic_telemetry::init_telemetry(greentic_telemetry::TelemetryConfig {
-                service_name,
-            })?;
-            tracing::info!("greentic telemetry initialized via preconfigured payload");
+            init_otlp(
+                OtlpConfig {
+                    service_name: service_name.clone(),
+                    endpoint: settings.otlp.and_then(|o| o.endpoint),
+                    sampling_rate: settings.sampling,
+                },
+                Vec::new(),
+            )
+            .with_context(|| "failed to initialize greentic telemetry")?;
+
+            tracing::info!(
+                service = %service_name,
+                source = %source_desc,
+                "telemetry pipeline initialized"
+            );
+
             Ok(Some(TelemetryHandle))
         }
-    }
-}
-
-fn set_env(key: &str, value: impl AsRef<str>) {
-    unsafe {
-        std::env::set_var(key, value.as_ref());
     }
 }

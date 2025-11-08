@@ -49,12 +49,15 @@ step "Tool versions"
 rustc --version
 cargo --version
 
-run_cmd "cargo fmt" cargo fmt -- --check
-run_cmd "cargo clippy" cargo clippy --all-targets -- -D warnings
-run_cmd "cargo test" cargo test --all -- --nocapture
+run_cmd "cargo fmt" cargo fmt --all -- --check
+run_cmd "cargo clippy" cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
+run_cmd "cargo test" cargo test --workspace --locked -- --nocapture
+run_cmd "cargo package (greentic-runner-host)" bash -c 'cd crates/greentic-runner-host && cargo package --allow-dirty'
 
-if [ "$LOCAL_CHECK_STRICT" = "1" ]; then
-    run_cmd "cargo deny" cargo deny check
+if grep -q 'greentic-runner-host' Cargo.toml && grep -A2 'greentic-runner-host' Cargo.toml | grep -q 'path'; then
+    echo "[skip] cargo package (greentic-demo) because greentic-runner-host is still a path dependency"
+else
+    run_cmd "cargo package (greentic-demo)" cargo package --allow-dirty
 fi
 
 echo ""
