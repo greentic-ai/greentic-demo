@@ -1,0 +1,40 @@
+[package]
+name = "greentic-demo"
+version = "0.1.0"
+edition = "2024"
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "greentic-demo"
+path = "cmd/greentic-demo/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+async-nats = "0.37"
+chrono = { version = "0.4", features = ["serde"] }
+clap = { version = "4.5", features = ["derive", "env"] }
+dotenvy = "0.15"
+futures = "0.3"
+greentic-runner-host = { path = "crates/greentic-runner-host" }
+nkeys = "0.3"
+parking_lot = "0.12"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "1.0"
+tokio = { version = "1.37", features = ["macros", "rt-multi-thread", "signal", "fs"] }
+tokio-stream = "0.1"
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt", "json"] }
+greentic-telemetry = { path = "../greentic-telemetry" }
+uuid = { version = "1.8", features = ["serde", "v4"] }
+
+[dev-dependencies]
+serde_json = "1.0"
+tokio = { version = "1.37", features = ["macros", "rt-multi-thread"] }
+
+[patch.crates-io]
+greentic-types = { path = "../greentic-types" }
+greentic-interfaces = { path = "../greentic-interfaces" }
