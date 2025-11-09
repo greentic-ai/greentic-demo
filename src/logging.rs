@@ -38,11 +38,9 @@ pub fn init_logging(config: &AppConfig) -> Result<LoggingGuard> {
 }
 
 fn init_dev_logging(path: &PathBuf) -> Result<Option<WorkerGuard>> {
-    if let Some(parent) = path.parent() {
-        if !parent.as_os_str().is_empty() {
-            fs::create_dir_all(parent)
-                .with_context(|| format!("failed to create log directory {parent:?}"))?;
-        }
+    if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("failed to create log directory {parent:?}"))?;
     }
 
     let file = OpenOptions::new()

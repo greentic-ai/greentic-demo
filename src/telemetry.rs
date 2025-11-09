@@ -42,18 +42,16 @@ pub fn init(config: &TelemetryConfig) -> Result<Option<TelemetryHandle>> {
                 .service_name
                 .unwrap_or_else(|| "greentic-demo".to_string());
 
-            if let Some(otlp) = settings.otlp.as_ref() {
-                if let Some(headers) = &otlp.headers {
-                    let header_str = headers
-                        .iter()
-                        .map(|(k, v)| format!("{k}={v}"))
-                        .collect::<Vec<_>>()
-                        .join(",");
-                    if !header_str.is_empty() {
-                        // SAFETY: setting process env vars is safe within this process.
-                        unsafe {
-                            std::env::set_var("OTEL_EXPORTER_OTLP_HEADERS", header_str);
-                        }
+            if let Some(otlp) = settings.otlp.as_ref().and_then(|o| o.headers.as_ref()) {
+                let header_str = otlp
+                    .iter()
+                    .map(|(k, v)| format!("{k}={v}"))
+                    .collect::<Vec<_>>()
+                    .join(",");
+                if !header_str.is_empty() {
+                    // SAFETY: setting process env vars is safe within this process.
+                    unsafe {
+                        std::env::set_var("OTEL_EXPORTER_OTLP_HEADERS", header_str);
                     }
                 }
             }
