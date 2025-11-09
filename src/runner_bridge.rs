@@ -147,14 +147,14 @@ struct FlowSelection {
 }
 
 fn select_flow(runtime: &TenantRuntime, activity: &Activity) -> FlowSelection {
-    if let Some(session_tenant) = session_string(activity, &["tenant"]) {
-        if session_tenant != runtime.tenant {
-            tracing::warn!(
-                tenant = %runtime.tenant,
-                requested = %session_tenant,
-                "session tenant hint ignored"
-            );
-        }
+    if let Some(session_tenant) = session_string(activity, &["tenant"])
+        && session_tenant != runtime.tenant
+    {
+        tracing::warn!(
+            tenant = %runtime.tenant,
+            requested = %session_tenant,
+            "session tenant hint ignored"
+        );
     }
 
     let node_hint = resolve_node_hint(activity);
@@ -318,10 +318,10 @@ fn normalize_outgoing(reference: &Activity, tenant: &str, activity: &mut Activit
 
     if let Some(trace_id) = reference.tenant_trace_id() {
         channel_data["traceId"] = Value::String(trace_id);
-    } else if let Some(conversation) = &reference.conversation {
-        if let Some(conv_id) = &conversation.id {
-            channel_data["traceId"] = Value::String(conv_id.clone());
-        }
+    } else if let Some(conversation) = &reference.conversation
+        && let Some(conv_id) = &conversation.id
+    {
+        channel_data["traceId"] = Value::String(conv_id.clone());
     }
 
     activity.channel_data = Some(channel_data);

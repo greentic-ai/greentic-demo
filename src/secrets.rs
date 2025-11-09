@@ -7,10 +7,10 @@ use anyhow::{Context, Result, anyhow};
 
 /// Resolve secrets either from environment, greentic-secrets CLI, or files.
 pub fn read(name: &str) -> Result<String> {
-    if let Ok(value) = env::var(name) {
-        if !value.trim().is_empty() {
-            return Ok(value);
-        }
+    if let Ok(value) = env::var(name)
+        && !value.trim().is_empty()
+    {
+        return Ok(value);
     }
 
     if let Some(value) = read_from_dir(name)? {
