@@ -1,9 +1,10 @@
-use std::borrow::Cow;
 use std::collections::HashMap;
 use std::sync::Arc;
 
 use anyhow::{Context, Result, anyhow, bail};
-use greentic_runner_host::{FlowContext, FlowEngine, HostConfig, PackRuntime, RetryConfig};
+use greentic_runner_host::config::HostConfig;
+use greentic_runner_host::pack::PackRuntime;
+use greentic_runner_host::runner::engine::{FlowContext, FlowEngine, RetryConfig};
 use serde_json::{Value, json};
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -49,7 +50,7 @@ impl RunnerBridge {
         ensure_allowed_secrets(&config, &self.allowed_secrets)?;
 
         let pack_runtime = Arc::new(
-            PackRuntime::load(&pack.index_path, Arc::clone(&config))
+            PackRuntime::load(&pack.index_path, Arc::clone(&config), None, None)
                 .await
                 .with_context(|| format!("failed to load pack for {}", pack.tenant))?,
         );
@@ -92,21 +93,23 @@ impl RunnerBridge {
         let payload = activity_to_flow_input(&activity)?;
         let selection = select_flow(&runtime, &activity);
         let retry_cfg = runtime.config.mcp_retry_config();
-        let flow_id = selection.flow_id.as_ref();
-        let node_hint = selection.node.as_deref();
         let ctx = FlowContext {
             tenant: &runtime.tenant,
-            flow_id,
-            node_id: node_hint,
+            flow_id: selection.flow_id.as_str(),
+            node_id: selection.node.as_deref(),
             tool: None,
             action: Some("messaging"),
+            session_id: None,
+            provider_id: None,
             retry_config: RetryConfig::from(retry_cfg),
+            observer: None,
+            mocks: None,
         };
 
         tracing::debug!(
             tenant,
             mode = ?self.mode,
-            flow = %flow_id,
+            flow = %selection.flow_id,
             "dispatching activity to flow engine"
         );
         let response = runtime
@@ -138,12 +141,12 @@ fn ensure_allowed_secrets(config: &HostConfig, allowed: &[String]) -> Result<()>
     Ok(())
 }
 
-struct FlowSelection<'a> {
-    flow_id: Cow<'a, str>,
+struct FlowSelection {
+    flow_id: String,
     node: Option<String>,
 }
 
-fn select_flow<'a>(runtime: &'a TenantRuntime, activity: &Activity) -> FlowSelection<'a> {
+fn select_flow(runtime: &TenantRuntime, activity: &Activity) -> FlowSelection {
     if let Some(session_tenant) = session_string(activity, &["tenant"]) {
         if session_tenant != runtime.tenant {
             tracing::warn!(
@@ -163,7 +166,7 @@ fn select_flow<'a>(runtime: &'a TenantRuntime, activity: &Activity) -> FlowSelec
                 "using flow override from activity"
             );
             return FlowSelection {
-                flow_id: Cow::Owned(flow_hint),
+                flow_id: flow_hint,
                 node: node_hint,
             };
         } else {
@@ -176,7 +179,7 @@ fn select_flow<'a>(runtime: &'a TenantRuntime, activity: &Activity) -> FlowSelec
     }
 
     FlowSelection {
-        flow_id: Cow::Borrowed(&runtime.messaging_flow_id),
+        flow_id: runtime.messaging_flow_id.clone(),
         node: node_hint,
     }
 }

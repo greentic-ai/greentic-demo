@@ -132,3 +132,8 @@ greentic-demo --packs-dir /var/lib/packs
 ```
 
 Remember to rerun `ci/local_check.sh` (fmt/clippy/test + `cargo package` dry-runs) before publishing a new crate version.
+
+## GitHub Actions
+
+- `.github/workflows/ci.yml` mirrors `ci/local_check.sh` on every push/PR to `main`, ensuring fmt/clippy/tests/package pass in CI.
+- `.github/workflows/publish.yml` runs `cargo publish --locked` when a release is published (or when manually triggered). Configure the `CARGO_REGISTRY_TOKEN` repo secret so the workflow can authenticate with crates.io.

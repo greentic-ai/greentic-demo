@@ -1,6 +1,6 @@
 [package]
 name = "greentic-demo"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2024"
 license = "MIT"
 description = "NATS-to-Greentic runner bridge that powers the greentic-demo messaging flow."
@@ -25,7 +25,7 @@ chrono = { version = "0.4", features = ["serde"] }
 clap = { version = "4.5", features = ["derive", "env"] }
 dotenvy = "0.15"
 futures = "0.3"
-greentic-runner-host = { version = "0.1.0", path = "crates/greentic-runner-host" }
+greentic-runner-host = "0.3"
 nkeys = "0.4"
 parking_lot = "0.12"
 serde = { version = "1.0", features = ["derive"] }
