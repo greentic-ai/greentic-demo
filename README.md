@@ -1,139 +1,64 @@
 # greentic-demo
 
-Single binary that bridges Bot Framework Activities and `greentic-runner` over NATS/JetStream. Packs are loaded once at startup and scoped per tenant.
+Thin bootstrap that wires environment variables into `greentic-runner-host`. All runtime logic (pack resolution, caching, hot reload, telemetry, secrets, routing) happens inside the runner; this crate simply loads `.env`, builds a stable `RunnerConfig`, and calls `runner_shim::run(cfg)` so future runner releases can drop in without churn.
 
-## Layout
-```
-cmd/greentic-demo/       # executable entrypoint
-src/                     # reusable library (config, logging, bridges)
-packs/<tenant>/index.ygtc
-env/.env.example         # developer defaults
-docs/quickstart.md       # runbook
-```
+## Quickstart
 
-## Features
-- Dev mode (`--dev`): loads `.env`, uses local NATS (`nats://127.0.0.1:4222`), writes human logs to `demo.log`, skips JWT.
-- Prod mode: expects secrets via env (JWT + seed), enables structured logs (placeholder for `greentic-telemetry`).
-- Pack loader: enumerates `packs/*/index.ygtc`, registers each tenant with the runner, and keeps going when individual packs fail. Every tenant **must** ship a `bindings.yaml`; secrets referenced there must be included via `RUNNER_ALLOWED_SECRETS`/`--allowed-secrets`.
-- Runner bridge: converts Activities -> runner signals and back. Unit tests cover text, Adaptive Cards, and button invoke payloads.
-- NATS bridge: subscribes to `messaging.activities.in.<tenant>`, calls the runner sequentially per tenant, and publishes responses to `.out.<tenant>`.
-- Health monitor: background task logs ingress/egress/error counters per tenant every 30 seconds.
-
-## Usage
-```bash
-cargo run --bin greentic-demo -- --dev --packs-dir ./packs --allowed-secrets TELEGRAM_BOT_TOKEN
-```
-Directory structure per tenant:
-
-```
-packs/<tenant>/
-  index.ygtc          # pack component (flows)
-  bindings.yaml       # host bindings (adapters, secrets, MCP tooling)
-  tools/              # optional tool binaries referenced by bindings
-```
-
-Example `bindings.yaml`:
-
-```yaml
-tenant: customera
-flow_type_bindings:
-  messaging:
-    adapter: bot-framework
-    config: {}
-    secrets:
-      - TELEGRAM_BOT_TOKEN
-mcp:
-  store:
-    kind: local-dir
-    path: ./tools
-  security:
-    require_signature: false
-  runtime:
-    max_memory_mb: 128
-    timeout_ms: 10000
-    fuel: 50000000
-  http_enabled: true
-```
-
-For production you typically omit `--dev` and provide:
-```
-export NATS_URL=nats://nats.internal:4222
-export NATS_JWT=$(greentic-secrets read demo.nats.jwt)
-export NATS_SEED=$(greentic-secrets read demo.nats.seed)
-```
-
-At runtime the binary resolves each secret by first checking env vars, then `GREENTIC_SECRETS_DIR/<NAME>`, and finally `greentic-secrets read <NAME>`. To feed greentic-telemetry that is preconfigured by the hosting environment, set `GREENTIC_TELEMETRY_CONFIG` (inline JSON) or `GREENTIC_TELEMETRY_CONFIG_FILE`; payloads describe OTLP endpoints, e.g.:
-```json
-{
-  "service_name": "greentic-demo",
-  "sampling": { "ratio": 1.0 },
-  "otlp": {
-    "endpoint": "https://telemetry.greentic.ai",
-    "protocol": "grpc",
-    "headers": { "authorization": "Bearer <token>" }
-  }
-}
-```
-
-See `docs/quickstart.md` for full instructions, subject naming, and tenant onboarding. Run `ci/local_check.sh` before pushing to mirror the GitHub Actions pipeline.
-
-## End-to-End With greentic-webchat
-
-1. **Start the messaging stack**  
-   In [`greentic-messaging`](../greentic-messaging) run `make stack-up`. This launches NATS/JetStream plus the token helper used by webchat.
-
-2. **Prepare tenants**  
-   Each folder under `packs/` must contain `index.ygtc` (the pack) and `bindings.yaml`. Make sure every secret listed under `flow_type_bindings.messaging.secrets` also appears in `RUNNER_ALLOWED_SECRETS`/`--allowed-secrets`.
-
-3. **Run this bridge**  
+1. Copy the defaults and edit as needed:
    ```bash
-   export RUNNER_ALLOWED_SECRETS=TELEGRAM_BOT_TOKEN
-   cargo run --bin greentic-demo -- --dev --packs-dir ./packs --allowed-secrets TELEGRAM_BOT_TOKEN
+   cp .env.example .env
+   $EDITOR .env
    ```
-   The process loads packs, subscribes to `messaging.activities.in.<tenant>`, and publishes replies to `.out.<tenant>`, while the health monitor logs ingress/egress/error totals every 30s.
-
-4. **Launch greentic-webchat**  
-   In [`greentic-webchat`](../greentic-webchat):
+   Make sure `PACKS_DIR` points to a directory where each tenant has a `bindings.yaml` file.
+2. Start the runner with your packs/index:
    ```bash
-   pnpm install
-   pnpm dev
+   make run
    ```
-   Open the dev server (default `http://localhost:4173`) and supply a token from the helper endpoint, e.g. `http://localhost:8787/token?tenant=customera`. For hosted demos, use `https://demo.greentic.ai/token?tenant=<tenant>`.
+   `make run` sources `.env`, then runs `cargo +nightly run --locked --bin greentic-demo` so you always test the same dependency graph as CI.
+3. Update `.env` whenever you switch pack backends, cache directories, refresh intervals, or tenant routing strategies. `dotenvy` loads the file automatically at startup.
 
-5. **Chat through the loop**  
-   Webchat sends Activities to `messaging.activities.in.<tenant>`, greentic-demo forwards them into `greentic-runner`, flows execute, and replies emerge on `messaging.activities.out.<tenant>` before rendering back in the browser.
+## Docker Image
 
-To target alternate subjects or deployments, adjust `--subject-prefix`, NATS credentials, or the token endpoint accordingly.
-
-## Installing From crates.io
-
-Once the crate is published you can install the bridge directly from crates.io:
+The multi-stage `Dockerfile` builds a MUSL binary and copies it into `gcr.io/distroless/static:nonroot`, keeping the final image around 25–30 MB. Targets cover the common flow:
 
 ```bash
-cargo install greentic-demo
+make docker-build DOCKER_IMAGE=ghcr.io/greentic-ai/greentic-demo:local
+make docker-run   DOCKER_IMAGE=ghcr.io/greentic-ai/greentic-demo:local
 ```
 
-At runtime you still need to provide packs and bindings locally:
+`docker-run` reads the current `.env` file and publishes `${PORT:-8080}` by default.
+
+## Cloudflared Tunnel
+
+Expose a local instance through Cloudflare Tunnel without poking firewall holes:
 
 ```bash
-greentic-demo \
-  --packs-dir ./packs \
-  --allowed-secrets TELEGRAM_BOT_TOKEN
+make tunnel
 ```
 
-For prod deployments export the required secrets and subject prefixes:
+This target checks for `cloudflared`, sources `.env`, and runs `cloudflared tunnel --url http://127.0.0.1:$PORT`. See Cloudflare's docs for installing the CLI and authenticating your account.
 
-```bash
-export NATS_URL=nats://nats.internal:4222
-export NATS_JWT=$(greentic-secrets read demo.nats.jwt)
-export NATS_SEED=$(greentic-secrets read demo.nats.seed)
-export RUNNER_ALLOWED_SECRETS=TELEGRAM_BOT_TOKEN
-greentic-demo --packs-dir /var/lib/packs
-```
+## Configuration Surface
 
-Remember to rerun `ci/local_check.sh` (fmt/clippy/test + `cargo package` dry-runs) before publishing a new crate version.
+`cmd/greentic-demo/main.rs` converts env vars into a stable `RunnerConfig`. The key knobs are:
 
-## GitHub Actions
+| Variable | Description | Default |
+| --- | --- | --- |
+| `PACKS_DIR` | Directory containing per-tenant `bindings.yaml` files | `./packs` |
+| `PORT` | HTTP listener exposed by the runner host | `8080` |
+| `SECRETS_BACKEND` | Hint for which secrets backend to bootstrap (`env`, `aws`, `gcp`, `azure`) | `env` |
+| `PACK_SOURCE` | Resolver scheme (`fs`, `http`, `oci`, `s3`, `gcs`, `azblob`) | `fs` |
+| `PACK_INDEX_URL` | Local path or URL to `index.json` | `./examples/index.json` |
+| `PACK_CACHE_DIR` | Content-addressed cache root | `.packs` |
+| `PACK_REFRESH_INTERVAL` | Human-friendly interval (e.g. `30s`, `5m`) for hot-reload polling | `30s` |
+| `TENANT_RESOLVER` | Routing strategy: `host`, `header`, `jwt`, or `env` | `host` |
+| `PACK_PUBLIC_KEY` | Optional Ed25519 key to verify signed packs | unset |
 
-- `.github/workflows/ci.yml` mirrors `ci/local_check.sh` on every push/PR to `main`, ensuring fmt/clippy/tests/package pass in CI.
-- `.github/workflows/publish.yml` runs `cargo publish --locked` when a release is published (or when manually triggered). Configure the `CARGO_REGISTRY_TOKEN` repo secret so the workflow can authenticate with crates.io.
+Additional runner features (telemetry presets, secrets bootstrap, admin APIs) will be surfaced directly through this config once the corresponding runner PRs land; the shim already has placeholders so the eventual cut-over is a one-liner re-export.
+
+## Development Notes
+
+- `make fmt` / `make test` run against `cargo +nightly` because the crate targets Rust 2024 edition.
+- `.env` is ignored by Git; `make run` automatically creates it from `.env.example` the first time.
+- Historical NATS bridge utilities (`config`, `nats_bridge`, etc.) remain available under `src/` for reference, but new demos should run entirely through the runner host via this bootstrap.
+- See `docs/deploy.md` for the Terraform + GitHub Actions deployment flow, required OIDC identities, and how to trigger the `Deploy` workflow.

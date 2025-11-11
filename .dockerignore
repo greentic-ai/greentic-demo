@@ -1,0 +1,9 @@
+/target
+/.target
+/.git
+/.gitignore
+/.env
+/env
+ci
+scripts
+tests

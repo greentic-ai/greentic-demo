@@ -1,0 +1,10 @@
+{
+  "customera": {
+    "main_pack": {
+      "name": "customera-demo",
+      "version": "1.0.0",
+      "locator": "fs://packs/customera/index.ygtc"
+    },
+    "overlays": []
+  }
+}
