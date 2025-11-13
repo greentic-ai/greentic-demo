@@ -28,9 +28,6 @@ env:
   AZURE_PROD_CLIENT_ID: ${{ vars.AZURE_PROD_CLIENT_ID }}
   AZURE_PROD_TENANT_ID: ${{ vars.AZURE_PROD_TENANT_ID }}
   AZURE_PROD_SUBSCRIPTION_ID: ${{ vars.AZURE_PROD_SUBSCRIPTION_ID }}
-  SELECTED_PROVIDERS: ${{ github.event.inputs.providers == '' && 'aws,gcp,azure' || github.event.inputs.providers }}
-  SELECTED_ENVIRONMENTS: ${{ github.event.inputs.environments == '' && 'dev,prod' || github.event.inputs.environments }}
-
 jobs:
   build:
     name: Build & Push Image
@@ -75,11 +72,11 @@ jobs:
     permissions:
       contents: read
       id-token: write
-    strategy:
-      fail-fast: false
-      matrix:
-        provider: ${{ split(replace(env.SELECTED_PROVIDERS, ' ', ''), ',') }}
-        environment: ${{ split(replace(env.SELECTED_ENVIRONMENTS, ' ', ''), ',') }}
+      strategy:
+        fail-fast: false
+        matrix:
+        provider: ${{ split(replace(github.event.inputs.providers == '' && 'aws,gcp,azure' || github.event.inputs.providers, ' ', ''), ',') }}
+        environment: ${{ split(replace(github.event.inputs.environments == '' && 'dev,prod' || github.event.inputs.environments, ' ', ''), ',') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
