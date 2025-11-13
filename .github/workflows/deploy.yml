@@ -28,6 +28,8 @@ env:
   AZURE_PROD_CLIENT_ID: ${{ vars.AZURE_PROD_CLIENT_ID }}
   AZURE_PROD_TENANT_ID: ${{ vars.AZURE_PROD_TENANT_ID }}
   AZURE_PROD_SUBSCRIPTION_ID: ${{ vars.AZURE_PROD_SUBSCRIPTION_ID }}
+  SELECTED_PROVIDERS: ${{ github.event.inputs.providers == '' && 'aws,gcp,azure' || github.event.inputs.providers }}
+  SELECTED_ENVIRONMENTS: ${{ github.event.inputs.environments == '' && 'dev,prod' || github.event.inputs.environments }}
 
 jobs:
   build:
@@ -69,9 +71,6 @@ jobs:
   infra:
     name: Provision ${{ matrix.provider }} (${{ matrix.environment }})
     needs: build
-    if: >-
-      (github.event.inputs.providers == '' || contains(github.event.inputs.providers, matrix.provider)) &&
-      (github.event.inputs.environments == '' || contains(github.event.inputs.environments, matrix.environment))
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -79,8 +78,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        provider: [aws, gcp, azure]
-        environment: [dev, prod]
+        provider: ${{ fromJson('["' + replace(replace(env.SELECTED_PROVIDERS, ' ', ''), ',', '","') + '"]') }}
+        environment: ${{ fromJson('["' + replace(replace(env.SELECTED_ENVIRONMENTS, ' ', ''), ',', '","') + '"]') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
