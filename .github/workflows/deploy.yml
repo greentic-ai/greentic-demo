@@ -78,8 +78,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        provider: ${{ fromJson('["' + replace(replace(env.SELECTED_PROVIDERS, ' ', ''), ',', '","') + '"]') }}
-        environment: ${{ fromJson('["' + replace(replace(env.SELECTED_ENVIRONMENTS, ' ', ''), ',', '","') + '"]') }}
+        provider: ${{ split(replace(env.SELECTED_PROVIDERS, ' ', ''), ',') }}
+        environment: ${{ split(replace(env.SELECTED_ENVIRONMENTS, ' ', ''), ',') }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
