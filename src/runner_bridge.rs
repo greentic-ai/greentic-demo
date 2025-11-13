@@ -4,7 +4,7 @@ use std::sync::Arc;
 use anyhow::{Context, Result, anyhow, bail};
 use greentic_runner_host::config::HostConfig;
 use greentic_runner_host::pack::PackRuntime;
-use greentic_runner_host::runner::engine::{FlowContext, FlowEngine, RetryConfig};
+use greentic_runner_host::runner::engine::{FlowContext, FlowEngine, FlowExecution, RetryConfig};
 use serde_json::{Value, json};
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -12,6 +12,8 @@ use uuid::Uuid;
 use crate::config::Mode;
 use crate::loader::TenantPack;
 use crate::types::{Activity, ActivityType};
+use greentic_runner_host::storage::{new_session_store, new_state_store};
+use greentic_runner_host::wasi::RunnerWasiPolicy;
 
 #[derive(Clone)]
 pub struct RunnerBridge {
@@ -49,14 +51,27 @@ impl RunnerBridge {
         );
         ensure_allowed_secrets(&config, &self.allowed_secrets)?;
 
+        let session_store = new_session_store();
+        let state_store = new_state_store();
+        let wasi_policy = Arc::new(RunnerWasiPolicy::default());
+
         let pack_runtime = Arc::new(
-            PackRuntime::load(&pack.index_path, Arc::clone(&config), None, None)
-                .await
-                .with_context(|| format!("failed to load pack for {}", pack.tenant))?,
+            PackRuntime::load(
+                &pack.index_path,
+                Arc::clone(&config),
+                None,
+                None,
+                Some(Arc::clone(&session_store)),
+                Some(Arc::clone(&state_store)),
+                Arc::clone(&wasi_policy),
+                false,
+            )
+            .await
+            .with_context(|| format!("failed to load pack for {}", pack.tenant))?,
         );
 
         let engine = Arc::new(
-            FlowEngine::new(Arc::clone(&pack_runtime), Arc::clone(&config))
+            FlowEngine::new(vec![Arc::clone(&pack_runtime)], Arc::clone(&config))
                 .await
                 .with_context(|| format!("failed to prime flow engine for {}", pack.tenant))?,
         );
@@ -112,13 +127,13 @@ impl RunnerBridge {
             flow = %selection.flow_id,
             "dispatching activity to flow engine"
         );
-        let response = runtime
+        let response: FlowExecution = runtime
             .engine
             .execute(ctx, payload)
             .await
             .with_context(|| format!("flow execution failed for tenant {tenant}"))?;
 
-        flow_value_to_activities(&activity, tenant, response)
+        flow_value_to_activities(&activity, tenant, response.output)
     }
 }
 
