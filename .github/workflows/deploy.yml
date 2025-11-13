@@ -71,21 +71,33 @@ jobs:
         run: |
           echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> "$GITHUB_OUTPUT"
 
-  infra:
-    name: Provision ${{ matrix.provider }} (${{ matrix.environment }})
+  infra-aws:
+    name: Provision aws (${{ matrix.environment }})
     needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
       id-token: write
 
+    # Run this job only if AWS is among the requested providers
+    if: contains(format(',{0},', github.event.inputs.providers || 'aws,gcp,azure'), ',aws,')
+
     strategy:
       fail-fast: false
       matrix:
-        provider: ${{ split(replace(github.event.inputs.providers == '' && 'aws,gcp,azure' || github.event.inputs.providers, ' ', ''), ',') }}
-        environment: ${{ split(replace(github.event.inputs.environments == '' && 'dev,prod' || github.event.inputs.environments, ' ', ''), ',') }}
+        environment: [dev, prod]
 
     steps:
+      - name: Skip non-requested environment
+        if: >
+          !contains(
+            format(',{0},', github.event.inputs.environments || 'dev,prod'),
+            format(',{0},', matrix.environment)
+          )
+        run: |
+          echo "Skipping aws/${{ matrix.environment }} (not requested)"
+          exit 0
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -95,39 +107,23 @@ jobs:
           terraform_wrapper: false
 
       - name: Configure AWS credentials
-        if: matrix.provider == 'aws'
         uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ matrix.environment == 'prod' && env.AWS_PROD_ROLE_ARN || env.AWS_DEV_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Configure GCP credentials
-        if: matrix.provider == 'gcp'
-        uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: ${{ matrix.environment == 'prod' && env.GCP_PROD_WIP || env.GCP_DEV_WIP }}
-          service_account: ${{ matrix.environment == 'prod' && env.GCP_PROD_SA || env.GCP_DEV_SA }}
-
-      - name: Configure Azure credentials
-        if: matrix.provider == 'azure'
-        uses: azure/login@v2
-        with:
-          client-id: ${{ matrix.environment == 'prod' && env.AZURE_PROD_CLIENT_ID || env.AZURE_DEV_CLIENT_ID }}
-          tenant-id: ${{ matrix.environment == 'prod' && env.AZURE_PROD_TENANT_ID || env.AZURE_DEV_TENANT_ID }}
-          subscription-id: ${{ matrix.environment == 'prod' && env.AZURE_PROD_SUBSCRIPTION_ID || env.AZURE_DEV_SUBSCRIPTION_ID }}
-
       - name: Terraform Init
-        run: terraform -chdir=infra/terraform/envs/${{ matrix.provider }} init
+        run: terraform -chdir=infra/terraform/envs/aws init
 
       - name: Terraform Apply
-        run: terraform -chdir=infra/terraform/envs/${{ matrix.provider }} apply -auto-approve \
-          -var-file=../${{ matrix.environment }}/${{ matrix.provider }}/terraform.tfvars \
+        run: terraform -chdir=infra/terraform/envs/aws apply -auto-approve \
+          -var-file=../${{ matrix.environment }}/aws/terraform.tfvars \
           -var image=${{ needs.build.outputs.image }}
 
       - name: Capture Terraform outputs
         id: tf
         run: |
-          terraform -chdir=infra/terraform/envs/${{ matrix.provider }} output -json > tf-output.json
+          terraform -chdir=infra/terraform/envs/aws output -json > tf-output.json
           echo "service_url=$(jq -r '.service_url.value' tf-output.json)" >> "$GITHUB_OUTPUT"
           echo "otel_endpoint=$(jq -r '.otel_endpoint.value' tf-output.json)" >> "$GITHUB_OUTPUT"
 
@@ -139,6 +135,141 @@ jobs:
 
       - name: Publish deployment summary
         run: |
-          echo "## ${{ matrix.provider }} (${{ matrix.environment }})" >> $GITHUB_STEP_SUMMARY
+          echo "## aws (${{ matrix.environment }})" >> $GITHUB_STEP_SUMMARY
+          echo "- Service URL: ${{ steps.tf.outputs.service_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- OTEL Endpoint: ${{ steps.tf.outputs.otel_endpoint }}" >> $GITHUB_STEP_SUMMARY
+
+  infra-gcp:
+    name: Provision gcp (${{ matrix.environment }})
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    if: contains(format(',{0},', github.event.inputs.providers || 'aws,gcp,azure'), ',gcp,')
+
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, prod]
+
+    steps:
+      - name: Skip non-requested environment
+        if: >
+          !contains(
+            format(',{0},', github.event.inputs.environments || 'dev,prod'),
+            format(',{0},', matrix.environment)
+          )
+        run: |
+          echo "Skipping gcp/${{ matrix.environment }} (not requested)"
+          exit 0
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Configure GCP credentials
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ matrix.environment == 'prod' && env.GCP_PROD_WIP || env.GCP_DEV_WIP }}
+          service_account: ${{ matrix.environment == 'prod' && env.GCP_PROD_SA || env.GCP_DEV_SA }}
+
+      - name: Terraform Init
+        run: terraform -chdir=infra/terraform/envs/gcp init
+
+      - name: Terraform Apply
+        run: terraform -chdir=infra/terraform/envs/gcp apply -auto-approve \
+          -var-file=../${{ matrix.environment }}/gcp/terraform.tfvars \
+          -var image=${{ needs.build.outputs.image }}
+
+      - name: Capture Terraform outputs
+        id: tf
+        run: |
+          terraform -chdir=infra/terraform/envs/gcp output -json > tf-output.json
+          echo "service_url=$(jq -r '.service_url.value' tf-output.json)" >> $GITHUB_OUTPUT
+          echo "otel_endpoint=$(jq -r '.otel_endpoint.value' tf-output.json)" >> $GITHUB_OUTPUT
+
+      - name: Smoke test /healthz
+        env:
+          SERVICE_URL: ${{ steps.tf.outputs.service_url }}
+        run: |
+          curl -fsS "$SERVICE_URL/healthz"
+
+      - name: Publish deployment summary
+        run: |
+          echo "## gcp (${{ matrix.environment }})" >> $GITHUB_STEP_SUMMARY
+          echo "- Service URL: ${{ steps.tf.outputs.service_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "- OTEL Endpoint: ${{ steps.tf.outputs.otel_endpoint }}" >> $GITHUB_STEP_SUMMARY
+
+  infra-azure:
+    name: Provision azure (${{ matrix.environment }})
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    if: contains(format(',{0},', github.event.inputs.providers || 'aws,gcp,azure'), ',azure,')
+
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, prod]
+
+    steps:
+      - name: Skip non-requested environment
+        if: >
+          !contains(
+            format(',{0},', github.event.inputs.environments || 'dev,prod'),
+            format(',{0},', matrix.environment)
+          )
+        run: |
+          echo "Skipping azure/${{ matrix.environment }} (not requested)"
+          exit 0
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Configure Azure credentials
+        uses: azure/login@v2
+        with:
+          client-id: ${{ matrix.environment == 'prod' && env.AZURE_PROD_CLIENT_ID || env.AZURE_DEV_CLIENT_ID }}
+          tenant-id: ${{ matrix.environment == 'prod' && env.AZURE_PROD_TENANT_ID || env.AZURE_DEV_TENANT_ID }}
+          subscription-id: ${{ matrix.environment == 'prod' && env.AZURE_PROD_SUBSCRIPTION_ID || env.AZURE_DEV_SUBSCRIPTION_ID }}
+
+      - name: Terraform Init
+        run: terraform -chdir=infra/terraform/envs/azure init
+
+      - name: Terraform Apply
+        run: terraform -chdir=infra/terraform/envs/azure apply -auto-approve \
+          -var-file=../${{ matrix.environment }}/azure/terraform.tfvars \
+          -var image=${{ needs.build.outputs.image }}
+
+      - name: Capture Terraform outputs
+        id: tf
+        run: |
+          terraform -chdir=infra/terraform/envs/azure output -json > tf-output.json
+          echo "service_url=$(jq -r '.service_url.value' tf-output.json)" >> $GITHUB_OUTPUT
+          echo "otel_endpoint=$(jq -r '.otel_endpoint.value' tf-output.json)" >> $GITHUB_OUTPUT
+
+      - name: Smoke test /healthz
+        env:
+          SERVICE_URL: ${{ steps.tf.outputs.service_url }}
+        run: |
+          curl -fsS "$SERVICE_URL/healthz"
+
+      - name: Publish deployment summary
+        run: |
+          echo "## azure (${{ matrix.environment }})" >> $GITHUB_STEP_SUMMARY
           echo "- Service URL: ${{ steps.tf.outputs.service_url }}" >> $GITHUB_STEP_SUMMARY
           echo "- OTEL Endpoint: ${{ steps.tf.outputs.otel_endpoint }}" >> $GITHUB_STEP_SUMMARY
