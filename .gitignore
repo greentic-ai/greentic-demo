@@ -3,3 +3,6 @@
 /.cargo-home
 /env/.env
 /.env
+.DS_Store
+__pycache__/
+tests/__pycache__/

@@ -5,6 +5,7 @@ use anyhow::{Context, Result, anyhow, bail};
 use greentic_runner_host::config::HostConfig;
 use greentic_runner_host::pack::PackRuntime;
 use greentic_runner_host::runner::engine::{FlowContext, FlowEngine, FlowExecution, RetryConfig};
+use greentic_runner_host::secrets::SecretsBackend;
 use serde_json::{Value, json};
 use tokio::sync::RwLock;
 use uuid::Uuid;
@@ -54,6 +55,8 @@ impl RunnerBridge {
         let session_store = new_session_store();
         let state_store = new_state_store();
         let wasi_policy = Arc::new(RunnerWasiPolicy::default());
+        let secrets_backend = SecretsBackend::from_env(std::env::var("SECRETS_BACKEND").ok())?;
+        let secrets_manager = secrets_backend.build_manager()?;
 
         let pack_runtime = Arc::new(
             PackRuntime::load(
@@ -64,6 +67,7 @@ impl RunnerBridge {
                 Some(Arc::clone(&session_store)),
                 Some(Arc::clone(&state_store)),
                 Arc::clone(&wasi_policy),
+                Arc::clone(&secrets_manager),
                 false,
             )
             .await

@@ -6,5 +6,13 @@
       "locator": "fs://packs/customera/index.ygtc"
     },
     "overlays": []
+  },
+  "deployment-demo": {
+    "main_pack": {
+      "name": "generic-deploy-demo",
+      "version": "0.1.0",
+      "locator": "fs://examples/deployment/generic-deploy.gtpack/manifest.yaml"
+    },
+    "overlays": []
   }
 }

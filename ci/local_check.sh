@@ -11,11 +11,16 @@ cd "$ROOT_DIR"
 
 export CARGO_HOME="${CARGO_HOME:-$ROOT_DIR/.cargo-home}"
 export CARGO_TARGET_DIR="${CARGO_TARGET_DIR:-$ROOT_DIR/.target}"
-export CARGO_NET_OFFLINE="${CARGO_NET_OFFLINE:-true}"
+export CARGO_NET_OFFLINE="${CARGO_NET_OFFLINE:-1}"
 mkdir -p "$CARGO_HOME" "$CARGO_TARGET_DIR"
 
 LOCAL_CHECK_STRICT=${LOCAL_CHECK_STRICT:-0}
 LOCAL_CHECK_VERBOSE=${LOCAL_CHECK_VERBOSE:-0}
+
+OFFLINE_ARGS=()
+if [ "$CARGO_NET_OFFLINE" = "1" ]; then
+    OFFLINE_ARGS+=(--offline)
+fi
 
 if [ "$LOCAL_CHECK_VERBOSE" = "1" ]; then
     set -x
@@ -106,12 +111,12 @@ rustc --version
 cargo --version
 
 run_cmd "cargo fmt" cargo fmt --all -- --check
-run_cmd "cargo clippy" cargo clippy --workspace --all-targets --all-features --locked -- -D warnings
-run_cmd "cargo test" cargo test --workspace --locked -- --nocapture
+run_cmd "cargo clippy" cargo clippy --workspace --all-targets --all-features --locked ${OFFLINE_ARGS[@]+"${OFFLINE_ARGS[@]}"} -- -D warnings
+run_cmd "cargo test" cargo test --workspace --locked ${OFFLINE_ARGS[@]+"${OFFLINE_ARGS[@]}"} -- --nocapture
 step "cargo package (greentic-demo)"
 PACKAGE_LOG=$(mktemp 2>/dev/null || echo "/tmp/cargo-package.log")
-if ! cargo package -p greentic-demo --allow-dirty --locked --offline 2>&1 | tee "$PACKAGE_LOG"; then
-    echo "[fail] cargo package (offline)" >&2
+if ! cargo package -p greentic-demo --allow-dirty --locked ${OFFLINE_ARGS[@]+"${OFFLINE_ARGS[@]}"} 2>&1 | tee "$PACKAGE_LOG"; then
+    echo "[fail] cargo package" >&2
     cat "$PACKAGE_LOG" >&2
     rm -f "$PACKAGE_LOG"
     exit 1

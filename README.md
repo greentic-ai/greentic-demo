@@ -62,3 +62,15 @@ Additional runner features (telemetry presets, secrets bootstrap, admin APIs) wi
 - `.env` is ignored by Git; `make run` automatically creates it from `.env.example` the first time.
 - Historical NATS bridge utilities (`config`, `nats_bridge`, etc.) remain available under `src/` for reference, but new demos should run entirely through the runner host via this bootstrap.
 - See `docs/deploy.md` for the Terraform + GitHub Actions deployment flow, required OIDC identities, and how to trigger the `Deploy` workflow.
+
+## Deployment Demo Pack
+
+`examples/deployment/generic-deploy.gtpack` is a provider-agnostic deployment example:
+- `kind: deployment` pack with an events flow `deploy_generic_iac` that hands off to a dummy deployment component (`deploy.renderer` kind).
+- Component manifest `greentic.deploy.generic.iac` advertises `host.iac` for writing IaC templates and imports `greentic:deploy-plan@1.0.0`.
+- Includes a basic configurator flow for the component.
+- A compiled stub WASM for `greentic.deploy.generic.iac` is included in the pack, generated from `examples/deployment/stub-deploy-component`. Rebuild it if you tweak the stub:
+  - `cd examples/deployment/stub-deploy-component`
+  - `cargo build --release --target wasm32-wasip1`
+  - copy `target/wasm32-wasip1/release/stub-deploy-component.wasm` over `examples/deployment/generic-deploy.gtpack/components/greentic.deploy.generic.iac.wasm`
+- Discovery/run: the default `PACK_INDEX_URL` in `.env.example` already points to `./examples/index.json`, which now includes the deployment demo under tenant `deployment-demo`. To run it locally, set `TENANT_RESOLVER=env` and `TENANT=deployment-demo` (or use a host/header resolver that maps to that tenant) before starting the runner.
