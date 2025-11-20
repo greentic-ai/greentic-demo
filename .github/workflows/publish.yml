@@ -1,6 +1,10 @@
 name: Publish greentic-demo
 
 on:
+  push:
+    branches:
+      - master
+      - main
   release:
     types: [published]
   workflow_dispatch:
@@ -28,8 +32,9 @@ jobs:
       - name: Cargo publish
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.dry_run == 'true' }}
         run: |
-          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+          if [ "${DRY_RUN}" = "true" ]; then
             cargo publish --locked --dry-run
           else
             cargo publish --locked
