@@ -1,6 +1,9 @@
 /target
 /.target
 /.cargo-home
+temp_auto_push.bat
 /demos/*.gtbundle
 .DS_Store
 .greentic/
+.gitignore
+branch_structure.json
