@@ -134,14 +134,15 @@ gtc start ./deep-research-demo-bundle
 
 Run on AWS:
 ```bash
-gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/deep-research-demo-create-answers.json
+gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/deep-research-demo-aws-create-answers.json
 gtc setup ./deep-research-demo-bundle --answers https://github.com/greenticai/greentic-demo/releases/latest/download/deep-research-demo-aws-setup-answers.json
 gtc start ./deep-research-demo-bundle --target aws --upload-bundle s3://<your-bucket>/<prefix>/
 ```
 
 Notes:
-- The local setup path can be used with Ollama or another OpenAI-compatible endpoint during `gtc setup`.
-- To use Ollama locally, download it from `https://ollama.com/download`, install it, then pull or run the model you want and provide its base URL during `gtc setup`.
+- The local create/setup path is intentionally separate from the AWS create/setup path.
+- The local setup answers now default to the OpenAI path and expect `OPENAI_API_KEY` to be available during setup.
+- If you want to use Ollama locally instead, download it from `https://ollama.com/download`, install it, then override the provider URL/model during `gtc setup`.
 - The AWS setup answers use the OpenAI path and expect `OPENAI_API_KEY` to be available during setup.
 - For cloud deploy, choose `No tunnel` during setup; tunnel providers are not required for the AWS path.
 - If you want to use OpenAI, use the OpenAI-compatible base URL `https://api.openai.com/v1` during `gtc setup`.
