@@ -12,6 +12,7 @@ tmp_supply_*_answers.json
 **/bundle/packs/*.pack/dist/
 .DS_Store
 .greentic/
+temp_auto_push.bat
 /deep-research-demo-bundle
 
 # CI workflow artifacts (codex-security-fix, dependency-review, codex-semver-fix)
@@ -27,3 +28,5 @@ SECURITY_FIX_REPORT.md
 DEPENDENCY_FIX_REPORT.md
 semver-output.txt
 SEMVER_FIX_REPORT.md
+.gitignore
+branch_structure.json
