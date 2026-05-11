@@ -54,13 +54,6 @@
           },
           {
             "detected_kind": "oci",
-            "display_name": "Greentic State Redis (stable)",
-            "provider_id": "state-redis",
-            "reference": "oci://ghcr.io/greenticai/packs/state/state-redis:stable",
-            "version": "stable"
-          },
-          {
-            "detected_kind": "oci",
             "display_name": "Greentic State Memory (stable)",
             "provider_id": "state-memory",
             "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
@@ -76,7 +69,6 @@
         ],
         "extension_providers": [
           "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
-          "oci://ghcr.io/greenticai/packs/state/state-redis:stable",
           "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
           "oci://ghcr.io/greenticai/packs/deployer/greentic.deploy.aws:stable"
         ],
