@@ -58,11 +58,19 @@
             "provider_id": "state-memory",
             "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
             "version": "stable"
+          },
+          {
+            "detected_kind": "oci",
+            "display_name": "Greentic Deploy AWS (stable)",
+            "provider_id": "greentic.deploy.aws.stable",
+            "reference": "oci://ghcr.io/greenticai/packs/deployer/greentic.deploy.aws:stable",
+            "version": "stable"
           }
         ],
         "extension_providers": [
           "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
-          "oci://ghcr.io/greenticai/packs/state/state-memory:stable"
+          "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
+          "oci://ghcr.io/greenticai/packs/deployer/greentic.deploy.aws:stable"
         ],
         "mode": "create",
         "output_dir": "deep-research-demo-bundle",

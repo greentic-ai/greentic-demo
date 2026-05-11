@@ -103,11 +103,42 @@
       "create_pack_id": "greentic.helpdesk-itsm.demo",
       "create_pack_scaffold": true,
       "dry_run": false,
+      "flow_wizard_answers": {
+        "schema_id": "greentic-flow.wizard.plan",
+        "schema_version": "2.0.0",
+        "actions": [
+          {
+            "action": "add-step",
+            "flow": "flows/main.ygtc",
+            "step_id": "show_welcome",
+            "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+            "mode": "default",
+            "answers": {
+              "card_source": "asset",
+              "default_card_asset": "assets/cards/welcome.json",
+              "default_card_inline": {
+                "type": "AdaptiveCard",
+                "version": "1.6",
+                "body": [
+                  {
+                    "type": "TextBlock",
+                    "text": "{{i18n:adaptive_card.default.title}}"
+                  }
+                ]
+              },
+              "default_card_remote": "",
+              "multilingual": true,
+              "language_mode": "custom",
+              "supported_locales": "en"
+            }
+          }
+        ]
+      },
       "mode": "interactive",
       "pack_dir": "./helpdesk-itsm.pack",
       "run_build": false,
       "run_delegate_component": false,
-      "run_delegate_flow": false,
+      "run_delegate_flow": true,
       "run_doctor": false,
       "selected_actions": [
         "main.create_application_pack",
@@ -118,266 +149,26 @@
     },
     "locks": {}
   },
-  "pack": null,
-  "flow": {
-    "schema_id": "greentic-flow.wizard.plan",
-    "schema_version": "2.0.0",
-    "actions": [
-      {
-        "action": "add-flow",
-        "flow": "flows/create_ticket_flow.ygtc",
-        "flow_id": "create_ticket_flow",
-        "flow_type": "messaging"
-      },
-      {
-        "action": "add-flow",
-        "flow": "flows/jira_oauth_flow.ygtc",
-        "flow_id": "jira_oauth_flow",
-        "flow_type": "messaging"
-      },
-      {
-        "action": "add-flow",
-        "flow": "flows/knowledge_base_flow.ygtc",
-        "flow_id": "knowledge_base_flow",
-        "flow_type": "messaging"
-      },
-      {
-        "action": "add-flow",
-        "flow": "flows/on_event.ygtc",
-        "flow_id": "on_event",
-        "flow_type": "event"
-      },
-      {
-        "action": "add-flow",
-        "flow": "flows/on_message.ygtc",
-        "flow_id": "on_message",
-        "flow_type": "messaging"
-      },
-      {
-        "action": "add-step",
-        "flow": "flows/main.ygtc",
-        "step_id": "show_ticket_status",
-        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
-        "mode": "default",
-        "answers": {
-          "card_source": "asset",
-          "default_card_asset": "assets/cards/ticket_status.json",
-          "default_card_inline": {
-            "type": "AdaptiveCard",
-            "version": "1.6",
-            "body": [
-              {
-                "type": "TextBlock",
-                "text": "{{i18n:adaptive_card.default.title}}"
-              }
-            ]
-          },
-          "default_card_remote": "",
-          "multilingual": true,
-          "language_mode": "custom",
-          "supported_locales": "en"
-        }
-      },
-      {
-        "action": "add-step",
-        "flow": "flows/main.ygtc",
-        "step_id": "show_view_tickets",
-        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
-        "mode": "default",
-        "answers": {
-          "card_source": "asset",
-          "default_card_asset": "assets/cards/view_tickets.json",
-          "default_card_inline": {
-            "type": "AdaptiveCard",
-            "version": "1.6",
-            "body": [
-              {
-                "type": "TextBlock",
-                "text": "{{i18n:adaptive_card.default.title}}"
-              }
-            ]
-          },
-          "default_card_remote": "",
-          "multilingual": true,
-          "language_mode": "custom",
-          "supported_locales": "en"
-        }
-      },
-      {
-        "action": "add-step",
-        "flow": "flows/main.ygtc",
-        "step_id": "show_ticket_confirmation",
-        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
-        "mode": "default",
-        "answers": {
-          "card_source": "asset",
-          "default_card_asset": "assets/cards/ticket_confirmation.json",
-          "default_card_inline": {
-            "type": "AdaptiveCard",
-            "version": "1.6",
-            "body": [
-              {
-                "type": "TextBlock",
-                "text": "{{i18n:adaptive_card.default.title}}"
-              }
-            ]
-          },
-          "default_card_remote": "",
-          "multilingual": true,
-          "language_mode": "custom",
-          "supported_locales": "en"
-        }
-      },
-      {
-        "action": "add-step",
-        "flow": "flows/main.ygtc",
-        "step_id": "show_create_ticket_step2",
-        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
-        "mode": "default",
-        "answers": {
-          "card_source": "asset",
-          "default_card_asset": "assets/cards/create_ticket_step2.json",
-          "default_card_inline": {
-            "type": "AdaptiveCard",
-            "version": "1.6",
-            "body": [
-              {
-                "type": "TextBlock",
-                "text": "{{i18n:adaptive_card.default.title}}"
-              }
-            ]
-          },
-          "default_card_remote": "",
-          "multilingual": true,
-          "language_mode": "custom",
-          "supported_locales": "en"
-        }
-      },
-      {
-        "action": "add-step",
-        "flow": "flows/main.ygtc",
-        "step_id": "show_create_ticket_step1",
-        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
-        "mode": "default",
-        "answers": {
-          "card_source": "asset",
-          "default_card_asset": "assets/cards/create_ticket_step1.json",
-          "default_card_inline": {
-            "type": "AdaptiveCard",
-            "version": "1.6",
-            "body": [
-              {
-                "type": "TextBlock",
-                "text": "{{i18n:adaptive_card.default.title}}"
-              }
-            ]
-          },
-          "default_card_remote": "",
-          "multilingual": true,
-          "language_mode": "custom",
-          "supported_locales": "en"
-        }
-      },
-      {
-        "action": "add-step",
-        "flow": "flows/main.ygtc",
-        "step_id": "show_callback_confirmation",
-        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
-        "mode": "default",
-        "answers": {
-          "card_source": "asset",
-          "default_card_asset": "assets/cards/callback_confirmation.json",
-          "default_card_inline": {
-            "type": "AdaptiveCard",
-            "version": "1.6",
-            "body": [
-              {
-                "type": "TextBlock",
-                "text": "{{i18n:adaptive_card.default.title}}"
-              }
-            ]
-          },
-          "default_card_remote": "",
-          "multilingual": true,
-          "language_mode": "custom",
-          "supported_locales": "en"
-        }
-      },
-      {
-        "action": "add-step",
-        "flow": "flows/main.ygtc",
-        "step_id": "show_request_callback",
-        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
-        "mode": "default",
-        "answers": {
-          "card_source": "asset",
-          "default_card_asset": "assets/cards/request_callback.json",
-          "default_card_inline": {
-            "type": "AdaptiveCard",
-            "version": "1.6",
-            "body": [
-              {
-                "type": "TextBlock",
-                "text": "{{i18n:adaptive_card.default.title}}"
-              }
-            ]
-          },
-          "default_card_remote": "",
-          "multilingual": true,
-          "language_mode": "custom",
-          "supported_locales": "en"
-        }
-      },
-      {
-        "action": "add-step",
-        "flow": "flows/main.ygtc",
-        "step_id": "show_call_center",
-        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
-        "mode": "default",
-        "answers": {
-          "card_source": "asset",
-          "default_card_asset": "assets/cards/call_center.json",
-          "default_card_inline": {
-            "type": "AdaptiveCard",
-            "version": "1.6",
-            "body": [
-              {
-                "type": "TextBlock",
-                "text": "{{i18n:adaptive_card.default.title}}"
-              }
-            ]
-          },
-          "default_card_remote": "",
-          "multilingual": true,
-          "language_mode": "custom",
-          "supported_locales": "en"
-        }
-      },
-      {
-        "action": "add-step",
-        "flow": "flows/main.ygtc",
-        "step_id": "show_welcome",
-        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
-        "mode": "default",
-        "answers": {
-          "card_source": "asset",
-          "default_card_asset": "assets/cards/welcome.json",
-          "default_card_inline": {
-            "type": "AdaptiveCard",
-            "version": "1.6",
-            "body": [
-              {
-                "type": "TextBlock",
-                "text": "{{i18n:adaptive_card.default.title}}"
-              }
-            ]
-          },
-          "default_card_remote": "",
-          "multilingual": true,
-          "language_mode": "custom",
-          "supported_locales": "en"
-        }
-      }
-    ]
-  }
+  "pack": {
+    "wizard_id": "greentic-pack.wizard.run",
+    "schema_id": "greentic-pack.wizard.answers",
+    "schema_version": "1.0.0",
+    "locale": "en-GB",
+    "answers": {
+      "dry_run": false,
+      "mode": "interactive",
+      "pack_dir": ".",
+      "run_build": false,
+      "run_delegate_component": false,
+      "run_delegate_flow": false,
+      "run_doctor": false,
+      "selected_actions": [
+        "main.update_application_pack",
+        "main.exit"
+      ],
+      "sign": false
+    },
+    "locks": {}
+  },
+  "flow": null
 }
