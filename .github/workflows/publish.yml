@@ -207,14 +207,19 @@ jobs:
       - name: Install cargo-binstall
         uses: cargo-bins/cargo-binstall@main
 
-      - name: Install gtc
-        run: cargo binstall -y gtc && gtc install
-
       - name: Install ORAS
         uses: oras-project/setup-oras@v1
 
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | oras login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      # `gtc install` prefetches ~60 OCI artifacts from ghcr.io. Running it
+      # before authenticating burns through the anonymous-token rate limit
+      # and fails mid-stream with "Not authorized" on a random artifact.
+      # Authenticated pulls use the workflow's GITHUB_TOKEN quota and pick
+      # up creds from ~/.docker/config.json written by `oras login` above.
+      - name: Install gtc
+        run: cargo binstall -y gtc && gtc install
 
       - name: Package demos
         run: scripts/package_demos.sh
