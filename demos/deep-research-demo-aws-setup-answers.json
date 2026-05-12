@@ -33,6 +33,7 @@
       "mode": "websocket",
       "public_base_url": "${PUBLIC_BASE_URL}",
       "route": "webchat",
+      "skin": "3aigent",
       "tenant_channel_id": "demo:webchat"
     },
     "state-memory": {},
