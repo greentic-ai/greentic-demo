@@ -47,25 +47,25 @@
         "extension_provider_entries": [
           {
             "detected_kind": "oci",
-            "display_name": "Greentic Messaging Webchat GUI (latest)",
-            "provider_id": "greentic.messaging.webchat-gui.latest",
-            "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:latest",
-            "version": "latest"
+            "display_name": "Greentic Messaging Webchat GUI (stable)",
+            "provider_id": "greentic.messaging.webchat-gui.stable",
+            "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
+            "version": "stable"
           },
           {
             "detected_kind": "oci",
-            "display_name": "Greentic State Memory (latest)",
+            "display_name": "Greentic State Memory (stable)",
             "provider_id": "state-memory",
-            "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:latest",
-            "version": "latest"
+            "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
+            "version": "stable"
           }
         ],
         "extension_providers": [
-          "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:latest",
-          "oci://ghcr.io/greenticai/packs/state/state-memory:latest"
+          "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
+          "oci://ghcr.io/greenticai/packs/state/state-memory:stable"
         ],
         "mode": "create",
-        "output_dir": "./deep-research-demo-bundle",
+        "output_dir": "deep-research-demo-bundle",
         "remote_catalogs": [],
         "setup_answers": {},
         "setup_execution_intent": false,

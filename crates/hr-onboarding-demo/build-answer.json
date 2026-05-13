@@ -44,36 +44,36 @@
               "detected_kind": "oci",
               "display_name": "Greentic Messaging Webchat (latest)",
               "provider_id": "greentic.messaging.webchat.latest",
-              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:latest",
+              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:stable",
               "version": "latest"
             },
             {
               "detected_kind": "oci",
               "display_name": "Greentic Messaging Slack (latest)",
               "provider_id": "greentic.messaging.slack.latest",
-              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-slack:latest",
+              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-slack:stable",
               "version": "latest"
             },
             {
               "detected_kind": "oci",
               "display_name": "Greentic Messaging Teams (latest)",
               "provider_id": "greentic.messaging.teams.latest",
-              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-teams:latest",
+              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-teams:stable",
               "version": "latest"
             },
             {
               "detected_kind": "oci",
               "display_name": "Greentic State Memory (latest)",
               "provider_id": "state-memory",
-              "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:latest",
+              "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
               "version": "latest"
             }
           ],
           "extension_providers": [
-            "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:latest",
-            "oci://ghcr.io/greenticai/packs/messaging/messaging-slack:latest",
-            "oci://ghcr.io/greenticai/packs/messaging/messaging-teams:latest",
-            "oci://ghcr.io/greenticai/packs/state/state-memory:latest"
+            "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:stable",
+            "oci://ghcr.io/greenticai/packs/messaging/messaging-slack:stable",
+            "oci://ghcr.io/greenticai/packs/messaging/messaging-teams:stable",
+            "oci://ghcr.io/greenticai/packs/state/state-memory:stable"
           ],
           "mode": "create",
           "output_dir": "./hr-onboarding-demo-bundle",
@@ -111,136 +111,11 @@
             "action": "add-step",
             "flow": "flows/main.ygtc",
             "step_id": "show_welcome_card",
-            "component": "oci://ghcr.io/greenticai/components/component-adaptive-card@sha256:6b34848f801c7a70b8ce88e111ce49cce61e358404de17f65afefe77b07bf2d2",
+            "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
             "mode": "default",
             "answers": {
               "card_source": "asset",
               "default_card_asset": "assets/cards/welcome_card.json",
-              "default_card_inline": {
-                "type": "AdaptiveCard",
-                "version": "1.6",
-                "body": [
-                  {
-                    "type": "TextBlock",
-                    "text": "{{i18n:adaptive_card.default.title}}"
-                  }
-                ]
-              },
-              "default_card_remote": "",
-              "multilingual": true,
-              "language_mode": "custom",
-              "supported_locales": "en,id,es,fr,de,ja,zh"
-            }
-          },
-          {
-            "action": "add-step",
-            "flow": "flows/main.ygtc",
-            "step_id": "show_employee_form_card",
-            "component": "oci://ghcr.io/greenticai/components/component-adaptive-card@sha256:6b34848f801c7a70b8ce88e111ce49cce61e358404de17f65afefe77b07bf2d2",
-            "mode": "default",
-            "answers": {
-              "card_source": "asset",
-              "default_card_asset": "assets/cards/employee_form_card.json",
-              "default_card_inline": {
-                "type": "AdaptiveCard",
-                "version": "1.6",
-                "body": [
-                  {
-                    "type": "TextBlock",
-                    "text": "{{i18n:adaptive_card.default.title}}"
-                  }
-                ]
-              },
-              "default_card_remote": "",
-              "multilingual": true,
-              "language_mode": "custom",
-              "supported_locales": "en,id,es,fr,de,ja,zh"
-            }
-          },
-          {
-            "action": "add-step",
-            "flow": "flows/main.ygtc",
-            "step_id": "show_onboarding_checklist_card",
-            "component": "oci://ghcr.io/greenticai/components/component-adaptive-card@sha256:6b34848f801c7a70b8ce88e111ce49cce61e358404de17f65afefe77b07bf2d2",
-            "mode": "default",
-            "answers": {
-              "card_source": "asset",
-              "default_card_asset": "assets/cards/onboarding_checklist_card.json",
-              "default_card_inline": {
-                "type": "AdaptiveCard",
-                "version": "1.6",
-                "body": [
-                  {
-                    "type": "TextBlock",
-                    "text": "{{i18n:adaptive_card.default.title}}"
-                  }
-                ]
-              },
-              "default_card_remote": "",
-              "multilingual": true,
-              "language_mode": "custom",
-              "supported_locales": "en,id,es,fr,de,ja,zh"
-            }
-          },
-          {
-            "action": "add-step",
-            "flow": "flows/main.ygtc",
-            "step_id": "show_document_upload_card",
-            "component": "oci://ghcr.io/greenticai/components/component-adaptive-card@sha256:6b34848f801c7a70b8ce88e111ce49cce61e358404de17f65afefe77b07bf2d2",
-            "mode": "default",
-            "answers": {
-              "card_source": "asset",
-              "default_card_asset": "assets/cards/document_upload_card.json",
-              "default_card_inline": {
-                "type": "AdaptiveCard",
-                "version": "1.6",
-                "body": [
-                  {
-                    "type": "TextBlock",
-                    "text": "{{i18n:adaptive_card.default.title}}"
-                  }
-                ]
-              },
-              "default_card_remote": "",
-              "multilingual": true,
-              "language_mode": "custom",
-              "supported_locales": "en,id,es,fr,de,ja,zh"
-            }
-          },
-          {
-            "action": "add-step",
-            "flow": "flows/main.ygtc",
-            "step_id": "show_access_request_card",
-            "component": "oci://ghcr.io/greenticai/components/component-adaptive-card@sha256:6b34848f801c7a70b8ce88e111ce49cce61e358404de17f65afefe77b07bf2d2",
-            "mode": "default",
-            "answers": {
-              "card_source": "asset",
-              "default_card_asset": "assets/cards/access_request_card.json",
-              "default_card_inline": {
-                "type": "AdaptiveCard",
-                "version": "1.6",
-                "body": [
-                  {
-                    "type": "TextBlock",
-                    "text": "{{i18n:adaptive_card.default.title}}"
-                  }
-                ]
-              },
-              "default_card_remote": "",
-              "multilingual": true,
-              "language_mode": "custom",
-              "supported_locales": "en,id,es,fr,de,ja,zh"
-            }
-          },
-          {
-            "action": "add-step",
-            "flow": "flows/main.ygtc",
-            "step_id": "show_completion_card",
-            "component": "oci://ghcr.io/greenticai/components/component-adaptive-card@sha256:6b34848f801c7a70b8ce88e111ce49cce61e358404de17f65afefe77b07bf2d2",
-            "mode": "default",
-            "answers": {
-              "card_source": "asset",
-              "default_card_asset": "assets/cards/completion_card.json",
               "default_card_inline": {
                 "type": "AdaptiveCard",
                 "version": "1.6",
@@ -283,15 +158,12 @@
       "dry_run": false,
       "mode": "interactive",
       "pack_dir": ".",
-      "run_build": true,
+      "run_build": false,
       "run_delegate_component": false,
       "run_delegate_flow": false,
       "run_doctor": false,
       "selected_actions": [
         "main.update_application_pack",
-        "update_application_pack.run_update_validate",
-        "pipeline.update_validate",
-        "pipeline.sign_prompt.skip",
         "main.exit"
       ],
       "sign": false

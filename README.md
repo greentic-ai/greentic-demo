@@ -72,18 +72,6 @@ gtc setup --answers oci://ghcr.io/greenticai/answers/supply-chain/setup:latest .
 gtc start ./supply-chain-demo-bundle
 ```
 
-### incident
-
-Outcome:
-- Runs an incident flow demo with adaptive-card collection and Better Stack incident creation.
-
-Run:
-```bash
-gtc wizard --answers oci://ghcr.io/greenticai/answers/incident/create:latest
-gtc setup --answers oci://ghcr.io/greenticai/answers/incident/setup:latest ./incident-demo-bundle
-gtc start ./incident-demo-bundle
-```
-
 ### redbutton
 
 Outcome:
@@ -94,6 +82,13 @@ Run:
 gtc wizard --answers oci://ghcr.io/greenticai/answers/redbutton/create:latest
 gtc setup --answers oci://ghcr.io/greenticai/answers/redbutton/setup:latest ./redbutton-demo-bundle
 gtc start ./redbutton-demo-bundle
+```
+
+To send a message to the webhook for testing:
+```bash
+curl -i -X POST http://127.0.0.1:8080/v1/events/ingress/greentic.events.webhook/default/default \
+  -H "content-type: application/json" \
+  -d '{"event":"red_button","source":"demo","severity":"critical"}'
 ```
 
 ### cloud-deploy-demo
@@ -107,6 +102,10 @@ gtc wizard --answers oci://ghcr.io/greenticai/answers/cloud-deploy-demo/create:l
 gtc setup --no-ui --answers oci://ghcr.io/greenticai/answers/cloud-deploy-demo/setup:latest ./cloud-deploy-demo-bundle
 gtc start ./cloud-deploy-demo-bundle
 ```
+
+Notes:
+- This remains a minimal deployment smoke demo.
+- For the richer AWS-ready demo flow, use `deep-research-demo` below.
 
 ### weather-mcp-demo
 
@@ -123,21 +122,38 @@ gtc start ./weather-mcp-demo-bundle
 ### deep-research-demo
 
 Outcome:
-- Runs a deep-research assistant with `Single Shot` and `Agentic` modes, adaptive-card planning, and a final report flow.
+- Runs a deep-research assistant with `Single Shot` and `Agentic` modes, adaptive-card planning, a final report flow, and an AWS-deployable bundle path.
 
-Run:
+Run locally:
 ```bash
 gtc wizard --answers oci://ghcr.io/greenticai/answers/deep-research-demo/create:latest
 gtc setup --answers oci://ghcr.io/greenticai/answers/deep-research-demo/setup:latest ./deep-research-demo-bundle
 gtc start ./deep-research-demo-bundle
 ```
 
+Run on AWS:
+```bash
+gtc wizard --answers oci://ghcr.io/greenticai/answers/deep-research-demo/create-aws:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/deep-research-demo/setup-aws:latest ./deep-research-demo-bundle
+gtc start ./deep-research-demo-bundle --target aws --upload-bundle s3://<your-bucket>/<prefix>/
+```
+
 Notes:
-- By default this demo is configured for a local Ollama endpoint at `http://127.0.0.1:11434/v1` with `llama3:8b`.
-- To use Ollama locally, download it from `https://ollama.com/download`, install it, then pull or run the model with `ollama run llama3:8b`.
-- If you want to use OpenAI instead, use the OpenAI-compatible base URL `https://api.openai.com/v1` during `gtc setup`.
+- The local create/setup path is intentionally separate from the AWS create/setup path.
+- The local setup answers now default to the OpenAI path and expect `OPENAI_API_KEY` to be available during setup.
+- If you want to use Ollama locally instead, download it from `https://ollama.com/download`, install it, then override the provider URL/model during `gtc setup`.
+- The AWS setup answers use the OpenAI path and expect `OPENAI_API_KEY` to be available during setup.
+- For cloud deploy, choose `No tunnel` during setup; tunnel providers are not required for the AWS path.
+- If you want to use OpenAI, use the OpenAI-compatible base URL `https://api.openai.com/v1` during `gtc setup`.
 - You can create or manage your OpenAI API keys at `https://platform.openai.com/api-keys`.
 - If you want to use another OpenAI-compatible provider, supply that provider's compatible base URL and API key secret during `gtc setup`.
+- The preferred AWS path is `--upload-bundle s3://...`, with no extra env vars if `aws` CLI is already configured and has `s3:GetObject` / `s3:PutObject` access to that prefix.
+- If S3 upload permissions are not available yet, you can use this fallback instead:
+```bash
+export GREENTIC_DEPLOY_BUNDLE_SOURCE="https://github.com/greenticai/greentic-demo/releases/download/v0.1.74/deep-research-demo.gtbundle?ts=1778100000"
+gtc start ./deep-research-demo-bundle --target aws
+```
+- The AWS setup answers still expect runtime deployment variables such as `PUBLIC_BASE_URL` and `REDIS_URL` to be supplied during setup or deploy.
 
 ### telco-x-demo
 

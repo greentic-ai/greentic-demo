@@ -21,17 +21,17 @@
         "advanced_setup": false,
         "app_pack_entries": [
           {
-            "detected_kind": "local",
+            "detected_kind": "https",
             "display_name": "Telco-X Demo Pack",
             "mapping": {
               "scope": "global"
             },
             "pack_id": "telco-x",
-            "reference": "file://demos/telco-x.gtpack"
+            "reference": "https://github.com/greenticai/greentic-demo/releases/latest/download/telco-x.gtpack"
           }
         ],
         "app_packs": [
-          "file://demos/telco-x.gtpack"
+          "https://github.com/greenticai/greentic-demo/releases/latest/download/telco-x.gtpack"
         ],
         "bundle_id": "telco-x-demo",
         "bundle_name": "telco-x-demo",
@@ -41,23 +41,23 @@
             "detected_kind": "oci",
             "display_name": "Greentic Messaging Webchat GUI (latest)",
             "provider_id": "greentic.messaging.webchat-gui.latest",
-            "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:latest",
+            "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
             "version": "latest"
           },
           {
             "detected_kind": "oci",
             "display_name": "Greentic State Memory (latest)",
             "provider_id": "state-memory",
-            "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:latest",
+            "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
             "version": "latest"
           }
         ],
         "extension_providers": [
-          "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:latest",
-          "oci://ghcr.io/greenticai/packs/state/state-memory:latest"
+          "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
+          "oci://ghcr.io/greenticai/packs/state/state-memory:stable"
         ],
         "mode": "create",
-        "output_dir": "./telco-x-demo-bundle",
+        "output_dir": "telco-x-demo-bundle",
         "remote_catalogs": [],
         "capabilities": [
           "greentic.cap.bundle_assets.read.v1"

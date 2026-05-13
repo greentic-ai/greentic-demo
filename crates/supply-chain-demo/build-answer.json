@@ -44,36 +44,36 @@
               "detected_kind": "oci",
               "display_name": "Greentic Messaging Webchat (latest)",
               "provider_id": "greentic.messaging.webchat.latest",
-              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:latest",
+              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:stable",
               "version": "latest"
             },
             {
               "detected_kind": "oci",
               "display_name": "Greentic Messaging Slack (latest)",
               "provider_id": "greentic.messaging.slack.latest",
-              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-slack:latest",
+              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-slack:stable",
               "version": "latest"
             },
             {
               "detected_kind": "oci",
               "display_name": "Greentic Messaging Teams (latest)",
               "provider_id": "greentic.messaging.teams.latest",
-              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-teams:latest",
+              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-teams:stable",
               "version": "latest"
             },
             {
               "detected_kind": "oci",
               "display_name": "Greentic State Memory (latest)",
               "provider_id": "state-memory",
-              "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:latest",
+              "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
               "version": "latest"
             }
           ],
           "extension_providers": [
-            "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:latest",
-            "oci://ghcr.io/greenticai/packs/messaging/messaging-slack:latest",
-            "oci://ghcr.io/greenticai/packs/messaging/messaging-teams:latest",
-            "oci://ghcr.io/greenticai/packs/state/state-memory:latest"
+            "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:stable",
+            "oci://ghcr.io/greenticai/packs/messaging/messaging-slack:stable",
+            "oci://ghcr.io/greenticai/packs/messaging/messaging-teams:stable",
+            "oci://ghcr.io/greenticai/packs/state/state-memory:stable"
           ],
           "mode": "create",
           "output_dir": "./supply-chain-demo-bundle",
@@ -169,6 +169,306 @@
         "flow": "flows/stock_check_flow.ygtc",
         "flow_id": "stock_check_flow",
         "flow_type": "messaging"
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_issue_confirm",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/issue_confirm.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_report_issue",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/report_issue.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_pickup_confirmation",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/pickup_confirmation.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_schedule_pickup",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/schedule_pickup.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_shipment_status",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/shipment_status.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_track_shipment",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/track_shipment.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_shipments_menu",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/shipments_menu.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_order_details",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/order_details.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_orders_list",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/orders_list.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_orders_search",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/orders_search.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_inventory_overview",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/inventory_overview.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_welcome",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/welcome.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
       }
     ]
   }

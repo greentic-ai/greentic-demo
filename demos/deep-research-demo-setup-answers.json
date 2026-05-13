@@ -14,10 +14,10 @@
   },
   "setup_answers": {
     "deep-research-demo": {
-      "api_key_secret": "ollama-placeholder",
-      "provider": "ollama",
-      "model": "llama3:8b",
-      "url": "http://127.0.0.1:11434/v1"
+      "api_key_secret": "${OPENAI_API_KEY}",
+      "provider": "openai",
+      "model": "gpt-4o-mini",
+      "url": "https://api.openai.com/v1"
     },
     "messaging-webchat-gui": {
       "base_url": "http://127.0.0.1:8080",
