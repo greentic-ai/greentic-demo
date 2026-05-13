@@ -149,7 +149,11 @@ jobs:
               wkg oci push "$latest_ref" "$artifact"
               echo "${component_name}_latest=oci://${latest_ref}" >> .artifacts/component-refs.txt
             fi
-          done < <(find crates -mindepth 2 -maxdepth 2 -type d \( -name 'component-*' -o -name 'greentic-*' \) | sort)
+          done < <(
+            find crates -mindepth 2 -maxdepth 2 -type d \( -name 'component-*' -o -name 'greentic-*' \) \
+              ! -path 'crates/telco-x-demo/component-telco-present' \
+              | sort
+          )
 
       - name: Skip component publish when unchanged
         if: steps.component-changes.outputs.components != 'true'
