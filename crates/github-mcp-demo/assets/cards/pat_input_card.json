@@ -20,7 +20,7 @@
       "type": "Input.Text",
       "id": "pat_token",
       "label": "Personal Access Token",
-      "placeholder": "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "placeholder": "Paste your GitHub token",
       "isRequired": true,
       "style": "Password",
       "errorMessage": "Please enter a valid GitHub PAT."
