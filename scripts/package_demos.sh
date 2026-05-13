@@ -751,9 +751,14 @@ detect_provider_drift() {
             echo "Warning: drift check could not extract $bundle_name" >&2
             continue
         fi
+        # Key by relative path under the bundle (e.g.
+        # `providers/messaging-webchat-gui/pack.gtpack`), not bare basename.
+        # Multiple OCI providers in a single bundle share the inner filename
+        # `pack.gtpack`; keying on basename collides them and produces false
+        # drift reports where one bundle "disagrees with itself".
         find "$extract_dir" -name '*.gtpack' -print 2>/dev/null | while read -r gtpack; do
             local provider_name
-            provider_name="$(basename "$gtpack")"
+            provider_name="${gtpack#"$extract_dir"/}"
             local sha
             sha="$(shasum -a 256 "$gtpack" | awk '{print $1}')"
             printf '%s\t%s\t%s\n' "$provider_name" "$sha" "$bundle_name"
