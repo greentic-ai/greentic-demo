@@ -18,6 +18,10 @@ nodes:
 
   respond_telco:
     emit.response:
-      messages: "{{prev.messages}}"
+      renderedCard: "{{prev.adaptive_card}}"
+      scenario: "{{prev.scenario}}"
+      playbook_id: "{{prev.playbook_id}}"
+      summary: "{{prev.summary}}"
+      presentation: "{{prev.presentation}}"
     routing:
       - out: true
