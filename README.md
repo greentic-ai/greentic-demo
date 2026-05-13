@@ -2,16 +2,15 @@
 
 Runnable Greentic demo catalog.
 
-This repository provides prebuilt answer documents per demo so you can launch each one with the same 3-step flow:
+This repository publishes demo packs and answer documents to GHCR as OCI artifacts so you can launch each demo with the same 3-step flow:
 
-1. `gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/<demo>-create-answers.json`
-2. `gtc setup <bundle> --answers https://github.com/greenticai/greentic-demo/releases/latest/download/<demo>-setup-answers.json`
+1. `gtc wizard --answers oci://ghcr.io/greenticai/answers/<demo>/create:latest`
+2. `gtc setup --answers oci://ghcr.io/greenticai/answers/<demo>/setup:latest <bundle>`
 3. `gtc start <bundle>`
 
 ## Available Demos
 
-The demos below have both `*-create-answers.json` and `*-setup-answers.json` published in releases and are runnable with the 3-step flow.
-Standalone app-pack artifacts may also be published alongside these demos for reuse in other bundle flows.
+The demos below have both create and setup answer artifacts published as raw JSON OCI artifacts. Demo packs are published under `oci://ghcr.io/greenticai/packs/demos/<pack>:latest`.
 
 ### quickstart
 
@@ -20,8 +19,8 @@ Outcome:
 
 Run:
 ```bash
-gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/quickstart-create-answers.json
-gtc setup ./quickstart-demo-bundle --answers https://github.com/greenticai/greentic-demo/releases/latest/download/quickstart-setup-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/quickstart/create:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/quickstart/setup:latest ./quickstart-demo-bundle
 gtc start ./quickstart-demo-bundle
 ```
 
@@ -32,8 +31,8 @@ Outcome:
 
 Run:
 ```bash
-gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/hr-onboarding-create-answers.json
-gtc setup ./hr-onboarding-demo-bundle --answers https://github.com/greenticai/greentic-demo/releases/latest/download/hr-onboarding-setup-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/hr-onboarding/create:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/hr-onboarding/setup:latest ./hr-onboarding-demo-bundle
 gtc start ./hr-onboarding-demo-bundle
 ```
 
@@ -44,8 +43,8 @@ Outcome:
 
 Run:
 ```bash
-gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/helpdesk-itsm-create-answers.json
-gtc setup ./helpdesk-itsm-demo-bundle --answers https://github.com/greenticai/greentic-demo/releases/latest/download/helpdesk-itsm-setup-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/helpdesk-itsm/create:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/helpdesk-itsm/setup:latest ./helpdesk-itsm-demo-bundle
 gtc start ./helpdesk-itsm-demo-bundle
 ```
 
@@ -56,8 +55,8 @@ Outcome:
 
 Run:
 ```bash
-gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/sales-crm-create-answers.json
-gtc setup ./sales-crm-demo-bundle --answers https://github.com/greenticai/greentic-demo/releases/latest/download/sales-crm-setup-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/sales-crm/create:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/sales-crm/setup:latest ./sales-crm-demo-bundle
 gtc start ./sales-crm-demo-bundle
 ```
 
@@ -68,8 +67,8 @@ Outcome:
 
 Run:
 ```bash
-gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/supply-chain-create-answers.json
-gtc setup ./supply-chain-demo-bundle --answers https://github.com/greenticai/greentic-demo/releases/latest/download/supply-chain-setup-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/supply-chain/create:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/supply-chain/setup:latest ./supply-chain-demo-bundle
 gtc start ./supply-chain-demo-bundle
 ```
 
@@ -80,8 +79,8 @@ Outcome:
 
 Run:
 ```bash
-gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/incident-create-answers.json
-gtc setup ./incident-demo-bundle --answers https://github.com/greenticai/greentic-demo/releases/latest/download/incident-setup-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/incident/create:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/incident/setup:latest ./incident-demo-bundle
 gtc start ./incident-demo-bundle
 ```
 
@@ -92,8 +91,8 @@ Outcome:
 
 Run:
 ```bash
-gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/redbutton-create-answers.json
-gtc setup ./redbutton-demo-bundle --answers https://github.com/greenticai/greentic-demo/releases/latest/download/redbutton-setup-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/redbutton/create:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/redbutton/setup:latest ./redbutton-demo-bundle
 gtc start ./redbutton-demo-bundle
 ```
 
@@ -104,8 +103,8 @@ Outcome:
 
 Run:
 ```bash
-gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/cloud-deploy-demo-create-answers.json
-gtc setup --no-ui ./cloud-deploy-demo-bundle --answers https://github.com/greenticai/greentic-demo/releases/latest/download/cloud-deploy-demo-setup-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/cloud-deploy-demo/create:latest
+gtc setup --no-ui --answers oci://ghcr.io/greenticai/answers/cloud-deploy-demo/setup:latest ./cloud-deploy-demo-bundle
 gtc start ./cloud-deploy-demo-bundle
 ```
 
@@ -116,8 +115,8 @@ Outcome:
 
 Run:
 ```bash
-gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/weather-mcp-demo-create-answers.json
-gtc setup ./weather-mcp-demo-bundle --answers https://github.com/greenticai/greentic-demo/releases/latest/download/weather-mcp-demo-setup-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/weather-mcp-demo/create:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/weather-mcp-demo/setup:latest ./weather-mcp-demo-bundle
 gtc start ./weather-mcp-demo-bundle
 ```
 
@@ -128,8 +127,8 @@ Outcome:
 
 Run:
 ```bash
-gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/deep-research-demo-create-answers.json
-gtc setup ./deep-research-demo-bundle --answers https://github.com/greenticai/greentic-demo/releases/latest/download/deep-research-demo-setup-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/deep-research-demo/create:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/deep-research-demo/setup:latest ./deep-research-demo-bundle
 gtc start ./deep-research-demo-bundle
 ```
 
@@ -147,7 +146,7 @@ Outcome:
 
 Run:
 ```bash
-gtc wizard --answers https://github.com/greenticai/greentic-demo/releases/latest/download/telco-x-demo-create-answers.json
-gtc setup ./telco-x-demo-bundle --answers https://github.com/greenticai/greentic-demo/releases/latest/download/telco-x-demo-setup-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/telco-x-demo/create:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/telco-x-demo/setup:latest ./telco-x-demo-bundle
 gtc start ./telco-x-demo-bundle
 ```
