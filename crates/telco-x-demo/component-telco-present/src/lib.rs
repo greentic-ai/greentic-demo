@@ -5,8 +5,8 @@ use telco_x::adapters::AdapterFixtures;
 use telco_x::playbooks::{
     default_port_utilisation_threshold_percent, run_bgp_advertisers, run_change_correlation,
     run_change_correlation_filtered, run_free_ports, run_noisy_neighbour, run_port_utilisation,
-    run_prefix_traffic, run_scope_health_sweep, run_slo_status, run_top_source_asns,
-    run_vm_rca, run_vm_rca_filtered,
+    run_prefix_traffic, run_scope_health_sweep, run_slo_status, run_top_source_asns, run_vm_rca,
+    run_vm_rca_filtered,
 };
 use telco_x::presentation::{PresentationModel, PresentationSection, present_run};
 use telco_x::resolvers::ResolverCatalog;
@@ -67,12 +67,16 @@ impl node::Guest for Component {
         node::ComponentDescriptor {
             name: "component-telco-present".to_string(),
             version: "0.1.0".to_string(),
-            summary: Some("Bridge Telco-X presentation models into adaptive card payloads".to_string()),
+            summary: Some(
+                "Bridge Telco-X presentation models into adaptive card payloads".to_string(),
+            ),
             capabilities: Vec::new(),
             ops: vec![
                 node::Op {
                     name: "present".to_string(),
-                    summary: Some("Render a telco result into an adaptive card payload".to_string()),
+                    summary: Some(
+                        "Render a telco result into an adaptive card payload".to_string(),
+                    ),
                     input: node::IoSchema {
                         schema: node::SchemaSource::InlineCbor(schema.clone()),
                         content_type: "application/cbor".to_string(),
@@ -250,7 +254,7 @@ fn run_component(operation: &str, input: &[u8]) -> Value {
         "i18n-keys" => Value::Array(qa::i18n_keys().into_iter().map(Value::String).collect()),
         "present" => {
             let input = decode_input(input);
-            serde_json::to_value(execute_present(&input)).unwrap_or_else(|err| {
+            let mut value = serde_json::to_value(execute_present(&input)).unwrap_or_else(|err| {
                 json!({
                     "scenario": "error",
                     "playbook_id": "tx.playbook.error",
@@ -267,7 +271,15 @@ fn run_component(operation: &str, input: &[u8]) -> Value {
                     "adaptive_card": fallback_card("Error", "Failed to serialize Telco demo output."),
                     "presentation": {}
                 })
-            })
+            });
+            if value
+                .get("renderedCard")
+                .is_some_and(|rendered| !rendered.is_null())
+                && let Some(obj) = value.as_object_mut()
+            {
+                obj.remove("messages");
+            }
+            value
         }
         _ => json!({
             "scenario": "error",
@@ -665,13 +677,69 @@ fn execute_present(input: &PresentInput) -> PresentOutput {
         };
     }
 
+    if route == "show prefix traffic" || route == "prefix traffic" {
+        let prefix = metadata_text(&metadata, "prefix")
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or("10.24.0.0/16");
+        let direction = metadata_text(&metadata, "direction").unwrap_or("Inbound");
+        let time_window = metadata_text(&metadata, "time_window").unwrap_or("Last 24 hours");
+        let run = run_prefix_traffic(prefix, &resolvers, &fixtures);
+        let presentation = present_run(&run);
+        let presentation_json = serde_json::to_value(&presentation).expect("presentation json");
+        let adaptive_card = prefix_traffic_analysis_card(
+            prefix,
+            direction,
+            time_window,
+            &presentation_json,
+            &run.summary,
+        );
+        return PresentOutput {
+            scenario: "prefix-traffic".to_string(),
+            playbook_id: run.playbook_id,
+            summary: run.summary.clone(),
+            text: None,
+            provider_hint,
+            messages: response_messages_from_card(&adaptive_card, true, false),
+            rendered_card: None,
+            adaptive_card: None,
+            presentation: presentation_json,
+        };
+    }
+
+    if route == "show overutilised aci ports" {
+        let device = metadata_text(&metadata, "device")
+            .map(str::trim)
+            .filter(|value| !value.is_empty())
+            .unwrap_or("2201");
+        let threshold = metadata_number(&metadata, "threshold")
+            .unwrap_or(default_port_utilisation_threshold_percent());
+        let time_window = metadata_text(&metadata, "time_window").unwrap_or("Last 24 hours");
+        let run = run_port_utilisation(device, &resolvers, &fixtures, threshold);
+        let presentation = present_run(&run);
+        let presentation_json = serde_json::to_value(&presentation).expect("presentation json");
+        let adaptive_card =
+            port_utilisation_analysis_card(device, threshold, time_window, &presentation_json);
+        return PresentOutput {
+            scenario: "port-utilisation".to_string(),
+            playbook_id: run.playbook_id,
+            summary: run.summary.clone(),
+            text: None,
+            provider_hint,
+            messages: response_messages_from_card(&adaptive_card, true, false),
+            rendered_card: None,
+            adaptive_card: None,
+            presentation: presentation_json,
+        };
+    }
+
     if route == "run:port-utilisation-form" {
         let device = metadata_text(&metadata, "device")
             .map(str::trim)
             .filter(|value| !value.is_empty())
             .unwrap_or("2201");
-        let threshold =
-            metadata_number(&metadata, "threshold").unwrap_or(default_port_utilisation_threshold_percent());
+        let threshold = metadata_number(&metadata, "threshold")
+            .unwrap_or(default_port_utilisation_threshold_percent());
         let time_window = metadata_text(&metadata, "time_window").unwrap_or("Last 24 hours");
         let run = run_port_utilisation(device, &resolvers, &fixtures, threshold);
         let presentation = present_run(&run);
@@ -734,6 +802,35 @@ fn execute_present(input: &PresentInput) -> PresentOutput {
         };
     }
 
+    if route == "run vm rca" {
+        let service = metadata_text(&metadata, "service").unwrap_or("mobile-data");
+        let cluster = metadata_text(&metadata, "cluster").unwrap_or("default");
+        let symptom = metadata_text(&metadata, "symptom").unwrap_or("Latency spike");
+        let time_window = metadata_text(&metadata, "time_window").unwrap_or("Last 24 hours");
+        let run = run_vm_rca(service, None, &resolvers, &fixtures);
+        let presentation = present_run(&run);
+        let presentation_json = serde_json::to_value(&presentation).expect("presentation json");
+        let adaptive_card = vm_rca_analysis_card(
+            service,
+            cluster,
+            symptom,
+            time_window,
+            &presentation_json,
+            &run.summary,
+        );
+        return PresentOutput {
+            scenario: "vm-rca".to_string(),
+            playbook_id: run.playbook_id,
+            summary: run.summary.clone(),
+            text: None,
+            provider_hint,
+            messages: response_messages_from_card(&adaptive_card, true, false),
+            rendered_card: None,
+            adaptive_card: None,
+            presentation: presentation_json,
+        };
+    }
+
     if route == "run:slo-status-form" {
         let service = metadata_text(&metadata, "service")
             .map(str::trim)
@@ -747,8 +844,13 @@ fn execute_present(input: &PresentInput) -> PresentOutput {
         let run = run_slo_status(service, &resolvers);
         let presentation = present_run(&run);
         let presentation_json = serde_json::to_value(&presentation).expect("presentation json");
-        let adaptive_card =
-            slo_status_analysis_card(service, environment, time_window, &presentation_json, &run.summary);
+        let adaptive_card = slo_status_analysis_card(
+            service,
+            environment,
+            time_window,
+            &presentation_json,
+            &run.summary,
+        );
         return PresentOutput {
             scenario: "slo-status-form".to_string(),
             playbook_id: run.playbook_id,
@@ -782,7 +884,10 @@ fn execute_present(input: &PresentInput) -> PresentOutput {
                 ("Primary", "Routing control-plane snapshots".to_string()),
                 ("Signals", "Advertiser / next-hop / route-state".to_string()),
                 ("Dimensions", "Prefix / peer / route policy".to_string()),
-                ("Resolution", prefix_traffic_resolution_label(time_window).to_string()),
+                (
+                    "Resolution",
+                    prefix_traffic_resolution_label(time_window).to_string(),
+                ),
             ],
             &[
                 "✓ Loading current route advertisements for the selected prefix",
@@ -830,7 +935,10 @@ fn execute_present(input: &PresentInput) -> PresentOutput {
                 ("Primary", "Traffic engineering subsystem".to_string()),
                 ("Signals", "Source ASN / throughput / peer mix".to_string()),
                 ("Dimensions", "Prefix / ASN / direction".to_string()),
-                ("Resolution", prefix_traffic_resolution_label(time_window).to_string()),
+                (
+                    "Resolution",
+                    prefix_traffic_resolution_label(time_window).to_string(),
+                ),
             ],
             &[
                 "✓ Retrieving aggregated flow attribution by ASN",
@@ -873,10 +981,19 @@ fn execute_present(input: &PresentInput) -> PresentOutput {
                 ("Time window", time_window.to_string()),
             ],
             vec![
-                ("Primary", "ACI fabric inventory and utilisation telemetry".to_string()),
-                ("Signals", "Link-state / free capacity / recent usage".to_string()),
+                (
+                    "Primary",
+                    "ACI fabric inventory and utilisation telemetry".to_string(),
+                ),
+                (
+                    "Signals",
+                    "Link-state / free capacity / recent usage".to_string(),
+                ),
                 ("Dimensions", "Node / port / interface".to_string()),
-                ("Resolution", prefix_traffic_resolution_label(time_window).to_string()),
+                (
+                    "Resolution",
+                    prefix_traffic_resolution_label(time_window).to_string(),
+                ),
             ],
             &[
                 "✓ Loading port inventory for the selected node",
@@ -919,10 +1036,19 @@ fn execute_present(input: &PresentInput) -> PresentOutput {
                 ("Time window", time_window.to_string()),
             ],
             vec![
-                ("Primary", "Virtualisation telemetry and contention signals".to_string()),
-                ("Signals", "CPU pressure / host imbalance / tenant contention".to_string()),
+                (
+                    "Primary",
+                    "Virtualisation telemetry and contention signals".to_string(),
+                ),
+                (
+                    "Signals",
+                    "CPU pressure / host imbalance / tenant contention".to_string(),
+                ),
                 ("Dimensions", "Scope / host / VM".to_string()),
-                ("Resolution", prefix_traffic_resolution_label(time_window).to_string()),
+                (
+                    "Resolution",
+                    prefix_traffic_resolution_label(time_window).to_string(),
+                ),
             ],
             &[
                 "✓ Loading host and guest contention indicators",
@@ -968,7 +1094,10 @@ fn execute_present(input: &PresentInput) -> PresentOutput {
                 ("Primary", "Cross-domain health summary".to_string()),
                 ("Signals", "Service / infra / network state".to_string()),
                 ("Dimensions", "Scope / domain / severity".to_string()),
-                ("Resolution", prefix_traffic_resolution_label(time_window).to_string()),
+                (
+                    "Resolution",
+                    prefix_traffic_resolution_label(time_window).to_string(),
+                ),
             ],
             &[
                 "✓ Gathering service, infra, and network signals",
@@ -1020,8 +1149,14 @@ fn execute_present(input: &PresentInput) -> PresentOutput {
             ],
             vec![
                 ("Primary", source_system.to_string()),
-                ("Signals", "Change events / time anchors / affected scope".to_string()),
-                ("Dimensions", "Service / change / correlation window".to_string()),
+                (
+                    "Signals",
+                    "Change events / time anchors / affected scope".to_string(),
+                ),
+                (
+                    "Dimensions",
+                    "Service / change / correlation window".to_string(),
+                ),
                 ("Resolution", "Event-level timestamps".to_string()),
             ],
             &[
@@ -1088,10 +1223,22 @@ fn execute_present(input: &PresentInput) -> PresentOutput {
                 ("Time window", time_window.to_string()),
             ],
             vec![
-                ("Primary", "Combined RCA, change, and network evidence".to_string()),
-                ("Signals", "Changes / VM RCA / network saturation".to_string()),
-                ("Dimensions", "Service / cluster / symptom window".to_string()),
-                ("Resolution", prefix_traffic_resolution_label(time_window).to_string()),
+                (
+                    "Primary",
+                    "Combined RCA, change, and network evidence".to_string(),
+                ),
+                (
+                    "Signals",
+                    "Changes / VM RCA / network saturation".to_string(),
+                ),
+                (
+                    "Dimensions",
+                    "Service / cluster / symptom window".to_string(),
+                ),
+                (
+                    "Resolution",
+                    prefix_traffic_resolution_label(time_window).to_string(),
+                ),
             ],
             &[
                 "✓ Gathering recent changes for the selected service",
@@ -1144,7 +1291,11 @@ fn execute_present(input: &PresentInput) -> PresentOutput {
     }
 
     if is_service_degradation_query(&route) {
-        let change = present_run(&run_change_correlation("mobile-data", &resolvers, &fixtures));
+        let change = present_run(&run_change_correlation(
+            "mobile-data",
+            &resolvers,
+            &fixtures,
+        ));
         let vm_rca = present_run(&run_vm_rca("mobile-data", None, &resolvers, &fixtures));
         let port = present_run(&run_port_utilisation(
             "2201",
@@ -1259,10 +1410,9 @@ fn response_messages_from_card(
         ]);
     }
 
-    let schema = card
-        .get("$schema")
-        .cloned()
-        .unwrap_or_else(|| Value::String("http://adaptivecards.io/schemas/adaptive-card.json".to_string()));
+    let schema = card.get("$schema").cloned().unwrap_or_else(|| {
+        Value::String("http://adaptivecards.io/schemas/adaptive-card.json".to_string())
+    });
     let version = card
         .get("version")
         .cloned()
@@ -1323,8 +1473,7 @@ fn attach_main_menu_to_section(section: &Value) -> Value {
                         .is_some_and(|actions| {
                             actions.iter().any(|action| {
                                 action.get("style").and_then(Value::as_str) == Some("destructive")
-                                    && action.get("title").and_then(Value::as_str)
-                                        == Some("← Menu")
+                                    && action.get("title").and_then(Value::as_str) == Some("← Menu")
                             })
                         })
             })
@@ -1841,6 +1990,7 @@ fn port_utilisation_parameters_card() -> Value {
             {
                 "type": "Action.Submit",
                 "title": "Start analysis",
+                "style": "positive",
                 "data": {
                     "text": "run:port-utilisation-form",
                     "step": "run:port-utilisation-form"
@@ -1889,6 +2039,32 @@ fn port_utilisation_analysis_card(
         _ => "5-minute interface counters",
     };
     let node_label = format!("ACI POD / NODE {device}");
+    let hot_port_rows = build_port_utilisation_rows(busiest_port, threshold, time_window);
+    let hot_port_table = adaptive_table(
+        &["Port", "Avg %", "Peak %", "Headroom", "State"],
+        hot_port_rows
+            .iter()
+            .map(|(port, avg, peak, headroom, state)| {
+                vec![
+                    port.clone(),
+                    format!("{avg:.0}%"),
+                    format!("{peak:.0}%"),
+                    format!("{headroom:.0}%"),
+                    state.clone(),
+                ]
+            })
+            .collect(),
+    );
+    let utilisation_trend =
+        build_port_utilisation_trend(avg_utilisation, peak_utilisation, time_window);
+    let utilisation_trend_values = utilisation_trend
+        .iter()
+        .map(|(_, value)| *value)
+        .collect::<Vec<_>>();
+    let utilisation_trend_labels = utilisation_trend
+        .iter()
+        .map(|(label, _)| label.as_str())
+        .collect::<Vec<_>>();
     json!({
         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
         "type": "AdaptiveCard",
@@ -1959,14 +2135,29 @@ fn port_utilisation_analysis_card(
                         "text": format!("Port utilisation for {node_label} — threshold {threshold_label} — {time_window}")
                     },
                     {
-                        "type": "FactSet",
-                        "facts": [
-                            { "title": "Hot ports", "value": hot_ports.to_string() },
-                            { "title": "Busiest port", "value": busiest_port },
-                            { "title": "Peak utilisation", "value": format!("{peak_utilisation:.0}%") },
-                            { "title": "Average utilisation", "value": format!("{avg_utilisation:.0}%") }
+                        "type": "ColumnSet",
+                        "spacing": "Medium",
+                        "columns": [
+                            metric_column("Hot ports", &hot_ports.to_string(), "good"),
+                            metric_column("Busiest port", busiest_port, "attention"),
+                            metric_column("Peak", &format!("{peak_utilisation:.0}%"), "attention"),
+                            metric_column("Average", &format!("{avg_utilisation:.0}%"), "warning")
                         ]
                     },
+                    hot_port_table,
+                    {
+                        "type": "TextBlock",
+                        "text": "Utilisation trend",
+                        "weight": "Bolder",
+                        "spacing": "Medium"
+                    },
+                    sparkline_block(
+                        "Trend",
+                        &utilisation_trend_values,
+                        &utilisation_trend_labels,
+                        "%",
+                        "attention"
+                    ),
                     main_menu_action_set()
                 ]
             },
@@ -2089,6 +2280,7 @@ fn prefix_traffic_parameters_card() -> Value {
             {
                 "type": "Action.Submit",
                 "title": "Start analysis",
+                "style": "positive",
                 "data": {
                     "text": "run:prefix-traffic-form",
                     "step": "run:prefix-traffic-form"
@@ -2160,6 +2352,7 @@ fn slo_status_parameters_card() -> Value {
             {
                 "type": "Action.Submit",
                 "title": "Start analysis",
+                "style": "positive",
                 "data": {
                     "text": "run:slo-status-form",
                     "step": "run:slo-status-form"
@@ -2187,7 +2380,11 @@ fn bgp_advertisers_parameters_card() -> Value {
                 "time_window",
                 "Time window",
                 "Last 24 hours",
-                &[("Last hour", "Last hour"), ("Last 24 hours", "Last 24 hours"), ("Last 7 days", "Last 7 days")],
+                &[
+                    ("Last hour", "Last hour"),
+                    ("Last 24 hours", "Last 24 hours"),
+                    ("Last 7 days", "Last 7 days"),
+                ],
             ),
         ],
         "Start analysis",
@@ -2207,13 +2404,21 @@ fn top_source_asns_parameters_card() -> Value {
                 "direction",
                 "Direction",
                 "Inbound",
-                &[("Inbound", "Inbound"), ("Outbound", "Outbound"), ("Bidirectional", "Bidirectional")],
+                &[
+                    ("Inbound", "Inbound"),
+                    ("Outbound", "Outbound"),
+                    ("Bidirectional", "Bidirectional"),
+                ],
             ),
             input_choice_set(
                 "time_window",
                 "Time window",
                 "Last 24 hours",
-                &[("Last hour", "Last hour"), ("Last 24 hours", "Last 24 hours"), ("Last 7 days", "Last 7 days")],
+                &[
+                    ("Last hour", "Last hour"),
+                    ("Last 24 hours", "Last 24 hours"),
+                    ("Last 7 days", "Last 7 days"),
+                ],
             ),
         ],
         "Start analysis",
@@ -2232,13 +2437,21 @@ fn free_ports_parameters_card() -> Value {
                 "device",
                 "Node / device",
                 "2201",
-                &[("ACI POD1 NODE2201", "2201"), ("ACI POD1 NODE2202", "2202"), ("ACI POD2 NODE3101", "3101")],
+                &[
+                    ("ACI POD1 NODE2201", "2201"),
+                    ("ACI POD1 NODE2202", "2202"),
+                    ("ACI POD2 NODE3101", "3101"),
+                ],
             ),
             input_choice_set(
                 "time_window",
                 "Time window",
                 "Last 24 hours",
-                &[("Last hour", "Last hour"), ("Last 24 hours", "Last 24 hours"), ("Last 7 days", "Last 7 days")],
+                &[
+                    ("Last hour", "Last hour"),
+                    ("Last 24 hours", "Last 24 hours"),
+                    ("Last 7 days", "Last 7 days"),
+                ],
             ),
         ],
         "Start analysis",
@@ -2257,13 +2470,21 @@ fn noisy_neighbour_parameters_card() -> Value {
                 "scope",
                 "Scope",
                 "riyadh-core",
-                &[("Riyadh core", "riyadh-core"), ("Dubai core", "dubai-core"), ("Default cluster", "default")],
+                &[
+                    ("Riyadh core", "riyadh-core"),
+                    ("Dubai core", "dubai-core"),
+                    ("Default cluster", "default"),
+                ],
             ),
             input_choice_set(
                 "time_window",
                 "Time window",
                 "Last 24 hours",
-                &[("Last hour", "Last hour"), ("Last 24 hours", "Last 24 hours"), ("Last 7 days", "Last 7 days")],
+                &[
+                    ("Last hour", "Last hour"),
+                    ("Last 24 hours", "Last 24 hours"),
+                    ("Last 7 days", "Last 7 days"),
+                ],
             ),
         ],
         "Start analysis",
@@ -2282,13 +2503,21 @@ fn scope_health_sweep_parameters_card() -> Value {
                 "scope",
                 "Scope",
                 "riyadh-core",
-                &[("Riyadh core", "riyadh-core"), ("Dubai core", "dubai-core"), ("Default cluster", "default")],
+                &[
+                    ("Riyadh core", "riyadh-core"),
+                    ("Dubai core", "dubai-core"),
+                    ("Default cluster", "default"),
+                ],
             ),
             input_choice_set(
                 "time_window",
                 "Time window",
                 "Last 24 hours",
-                &[("Last hour", "Last hour"), ("Last 24 hours", "Last 24 hours"), ("Last 7 days", "Last 7 days")],
+                &[
+                    ("Last hour", "Last hour"),
+                    ("Last 24 hours", "Last 24 hours"),
+                    ("Last 7 days", "Last 7 days"),
+                ],
             ),
         ],
         "Start analysis",
@@ -2308,13 +2537,21 @@ fn change_correlation_parameters_card() -> Value {
                 "source_system",
                 "Source system",
                 "Change registry",
-                &[("Change registry", "Change registry"), ("Jira change tickets", "Jira change tickets"), ("GitOps deploy history", "GitOps deploy history")],
+                &[
+                    ("Change registry", "Change registry"),
+                    ("Jira change tickets", "Jira change tickets"),
+                    ("GitOps deploy history", "GitOps deploy history"),
+                ],
             ),
             input_choice_set(
                 "time_window",
                 "Time window",
                 "Last 24 hours",
-                &[("Last hour", "Last hour"), ("Last 24 hours", "Last 24 hours"), ("Last 7 days", "Last 7 days")],
+                &[
+                    ("Last hour", "Last hour"),
+                    ("Last 24 hours", "Last 24 hours"),
+                    ("Last 7 days", "Last 7 days"),
+                ],
             ),
         ],
         "Start analysis",
@@ -2334,13 +2571,21 @@ fn service_degradation_parameters_card() -> Value {
                 "cluster",
                 "Cluster",
                 "default",
-                &[("Default cluster", "default"), ("Core Riyadh", "riyadh-core"), ("Core Dubai", "dubai-core")],
+                &[
+                    ("Default cluster", "default"),
+                    ("Core Riyadh", "riyadh-core"),
+                    ("Core Dubai", "dubai-core"),
+                ],
             ),
             input_choice_set(
                 "time_window",
                 "Time window",
                 "Last 24 hours",
-                &[("Last hour", "Last hour"), ("Last 24 hours", "Last 24 hours"), ("Last 7 days", "Last 7 days")],
+                &[
+                    ("Last hour", "Last hour"),
+                    ("Last 24 hours", "Last 24 hours"),
+                    ("Last 7 days", "Last 7 days"),
+                ],
             ),
         ],
         "Start analysis",
@@ -2383,6 +2628,7 @@ fn simple_parameters_card(
             {
                 "type": "Action.Submit",
                 "title": run_title,
+                "style": "positive",
                 "data": {
                     "text": run_step,
                     "step": run_step
@@ -2515,6 +2761,7 @@ fn vm_rca_parameters_card() -> Value {
             {
                 "type": "Action.Submit",
                 "title": "Start analysis",
+                "style": "positive",
                 "data": {
                     "text": "run:vm-rca-form",
                     "step": "run:vm-rca-form"
@@ -2540,40 +2787,6 @@ fn vm_rca_analysis_card(
     presentation: &Value,
     summary: &str,
 ) -> Value {
-    let sections = presentation["sections"].as_array().cloned().unwrap_or_default();
-    let findings_text: Vec<String> = sections
-        .iter()
-        .flat_map(|section| {
-            let title = section["title"].as_str().unwrap_or("Analysis section");
-            let item_values = section["items"]
-                .as_array()
-                .into_iter()
-                .flatten()
-                .filter_map(|item| {
-                    let label = item["label"].as_str().unwrap_or_default();
-                    let value = item["value"].as_str().unwrap_or_default();
-                    if value.is_empty() {
-                        None
-                    } else if label.is_empty() {
-                        Some(value.to_string())
-                    } else {
-                        Some(format!("{label}: {value}"))
-                    }
-                })
-                .collect::<Vec<_>>();
-            if item_values.is_empty() {
-                vec![format!("{title}: summary collected for the selected scope.")]
-            } else {
-                vec![format!("{title}: {}", item_values.join(" | "))]
-            }
-        })
-        .take(3)
-        .collect();
-    let findings_text = if findings_text.is_empty() {
-        vec![summary.to_string()]
-    } else {
-        findings_text
-    };
     let service_label = vm_service_label(service);
     let cluster_label = if cluster.eq_ignore_ascii_case("default") {
         "Default cluster".to_string()
@@ -2595,6 +2808,51 @@ fn vm_rca_analysis_card(
         "Last 7 days" => "Medium-high",
         _ => "High",
     };
+    let hypothesis_rows = vec![
+        vec![
+            suspected_root_cause.to_string(),
+            confidence.to_string(),
+            symptom.to_string(),
+        ],
+        vec![
+            "Recent change side-effect correlation".to_string(),
+            "Medium".to_string(),
+            "Operational timing overlap".to_string(),
+        ],
+        vec![
+            "Transient infra saturation".to_string(),
+            "Low".to_string(),
+            "Short-lived contention".to_string(),
+        ],
+    ];
+    let mut findings_container_items = vec![
+        json!({ "type": "TextBlock", "text": "Findings", "weight": "Bolder" }),
+        json!({
+            "type": "TextBlock",
+            "spacing": "Small",
+            "wrap": true,
+            "text": format!("VM RCA for {service_label} — {cluster_label} — {time_window}")
+        }),
+        json!({
+            "type": "ColumnSet",
+            "spacing": "Medium",
+            "columns": [
+                metric_column("Service", service_label, "good"),
+                metric_column("Cluster", &cluster_label, "accent"),
+                metric_column("Confidence", confidence, "attention")
+            ]
+        }),
+        json!({
+            "type": "TextBlock",
+            "spacing": "Small",
+            "wrap": true,
+            "text": format!("Most likely cause: {suspected_root_cause}. Investigation focus remains {symptom} for the selected {time_window} window.")
+        }),
+        adaptive_table(
+            &["Hypothesis", "Confidence", "Primary signal"],
+            hypothesis_rows,
+        ),
+    ];
     json!({
         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
         "type": "AdaptiveCard",
@@ -2657,22 +2915,7 @@ fn vm_rca_analysis_card(
                 "type": "Container",
                 "style": "emphasis",
                 "spacing": "Medium",
-                "items": [
-                    { "type": "TextBlock", "text": "Findings", "weight": "Bolder" },
-                    {
-                        "type": "TextBlock",
-                        "spacing": "Small",
-                        "wrap": true,
-                        "text": format!("VM RCA for {service_label} — {cluster_label} — {time_window}")
-                    },
-                    {
-                        "type": "TextBlock",
-                        "spacing": "Small",
-                        "wrap": true,
-                        "text": findings_text.join("\n\n")
-                    },
-                    main_menu_action_set()
-                ]
+                "items": findings_container_items
             },
             {
                 "type": "Container",
@@ -2749,6 +2992,22 @@ fn slo_status_analysis_card(
         "Last 7 days" => "53 minutes",
         _ => "11 minutes",
     };
+    let target_value = parse_percent_value(target);
+    let current_value = parse_percent_value(current);
+    let sli_trend = build_slo_trend(current_value, time_window);
+    let sli_trend_values = sli_trend
+        .iter()
+        .map(|(_, value)| *value)
+        .collect::<Vec<_>>();
+    let sli_trend_labels = sli_trend
+        .iter()
+        .map(|(label, _)| label.as_str())
+        .collect::<Vec<_>>();
+    let budget_remaining_ratio = match time_window {
+        "Last hour" => 0.44,
+        "Last 7 days" => 0.39,
+        _ => 0.27,
+    };
 
     json!({
         "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
@@ -2819,6 +3078,34 @@ fn slo_status_analysis_card(
                         "spacing": "Small",
                         "text": &format!("SLO compliance for {} — {} — {}", service_label, environment, time_window)
                     },
+                    {
+                        "type": "ColumnSet",
+                        "spacing": "Medium",
+                        "columns": [
+                            metric_column("Current SLI", current, "attention"),
+                            metric_column("Target", target, "good"),
+                            metric_column("Severity", severity, "warning")
+                        ]
+                    },
+                    sparkline_block(
+                        "SLI checkpoint trend",
+                        &sli_trend_values,
+                        &sli_trend_labels,
+                        "%",
+                        "warning"
+                    ),
+                    horizontal_bar(
+                        "Target attainment",
+                        &format!("{:.2}% / {:.2}%", current_value, target_value),
+                        (current_value / target_value).clamp(0.0, 1.0),
+                        "warning"
+                    ),
+                    horizontal_bar(
+                        "Error budget remaining",
+                        error_budget,
+                        budget_remaining_ratio,
+                        "attention"
+                    ),
                     {
                         "type": "FactSet",
                         "facts": [
@@ -2913,10 +3200,7 @@ fn prefix_traffic_analysis_card(
         .enumerate()
         .map(|(index, row)| {
             let peer = row["peer"].as_str().unwrap_or("-").to_string();
-            let router = row["device"]
-                .as_str()
-                .unwrap_or("-")
-                .to_ascii_uppercase();
+            let router = row["device"].as_str().unwrap_or("-").to_ascii_uppercase();
             let interface = format!("Te0/0/0/{}", index + 1);
             let scaled_bytes =
                 (row["bytes"].as_u64().unwrap_or_default() as f64 * volume_multiplier).round();
@@ -2924,21 +3208,33 @@ fn prefix_traffic_analysis_card(
                 (row["peak_mbps"].as_f64().unwrap_or_default() / 1000.0) * peak_multiplier;
             let avg_gbps = peak_gbps * 0.59;
             let p95_gbps = peak_gbps * 0.82;
-            (peer, router, interface, avg_gbps, p95_gbps, peak_gbps, scaled_bytes)
+            (
+                peer,
+                router,
+                interface,
+                avg_gbps,
+                p95_gbps,
+                peak_gbps,
+                scaled_bytes,
+            )
         })
         .collect();
 
     let total_scaled_bytes = computed_rows.iter().map(|row| row.6).sum::<f64>();
     let computed_rows: Vec<(String, String, String, f64, f64, f64, f64)> = computed_rows
         .into_iter()
-        .map(|(peer, router, interface, avg_gbps, p95_gbps, peak_gbps, scaled_bytes)| {
-            let share = if total_scaled_bytes == 0.0 {
-                0.0
-            } else {
-                (scaled_bytes / total_scaled_bytes) * 100.0
-            };
-            (peer, router, interface, avg_gbps, p95_gbps, peak_gbps, share)
-        })
+        .map(
+            |(peer, router, interface, avg_gbps, p95_gbps, peak_gbps, scaled_bytes)| {
+                let share = if total_scaled_bytes == 0.0 {
+                    0.0
+                } else {
+                    (scaled_bytes / total_scaled_bytes) * 100.0
+                };
+                (
+                    peer, router, interface, avg_gbps, p95_gbps, peak_gbps, share,
+                )
+            },
+        )
         .collect();
 
     let total_avg_gbps = computed_rows.iter().map(|row| row.3).sum::<f64>();
@@ -2952,42 +3248,39 @@ fn prefix_traffic_analysis_card(
         .map(|row| row.5)
         .fold(0.0_f64, f64::max);
     let peak_time = prefix_traffic_peak_time_label(time_window);
-
-    let table_rows: Vec<Value> = computed_rows
+    let throughput_trend = build_prefix_traffic_trend(total_avg_gbps, peak_observed, time_window);
+    let throughput_trend_values = throughput_trend
         .iter()
-        .map(|(peer, router, interface, avg_gbps, p95_gbps, peak_gbps, share)| {
-            json!({
-                "type": "FactSet",
-                "facts": [
-                    { "title": "Peer", "value": peer },
-                    { "title": "Router", "value": router },
-                    { "title": "Interface", "value": interface },
-                    { "title": "Avg Gbps", "value": format!("{avg_gbps:.2}") },
-                    { "title": "p95 Gbps", "value": format!("{p95_gbps:.2}") },
-                    { "title": "Peak Gbps", "value": format!("{peak_gbps:.2}") },
-                    { "title": "% Total", "value": format!("{share:.1}%") }
+        .map(|(_, value)| *value)
+        .collect::<Vec<_>>();
+    let throughput_trend_labels = throughput_trend
+        .iter()
+        .map(|(label, _)| label.as_str())
+        .collect::<Vec<_>>();
+    let concentration_rows = computed_rows
+        .iter()
+        .take(4)
+        .map(|(peer, _, _, _, _, _, share)| (peer.as_str(), *share))
+        .collect::<Vec<_>>();
+    let peak_rows = computed_rows
+        .iter()
+        .take(4)
+        .map(|(peer, _, _, _, _, peak_gbps, _)| (peer.as_str(), *peak_gbps))
+        .collect::<Vec<_>>();
+
+    let table_rows: Vec<Vec<String>> = computed_rows
+        .iter()
+        .map(
+            |(peer, router, _interface, avg_gbps, _p95_gbps, peak_gbps, share)| {
+                vec![
+                    peer.clone(),
+                    router.clone(),
+                    format!("{avg_gbps:.2}"),
+                    format!("{peak_gbps:.2}"),
+                    format!("{share:.1}%"),
                 ]
-            })
-        })
-        .collect();
-
-    let findings: Vec<Value> = ranking_rows
-        .iter()
-        .take(5)
-        .map(|row| {
-            json!({
-                "type": "TextBlock",
-                "wrap": true,
-                "spacing": "Small",
-                "text": format!(
-                    "{} | {} | bytes {} | peak_mbps {}",
-                    row["peer"].as_str().unwrap_or("-"),
-                    row["device"].as_str().unwrap_or("-"),
-                    row["bytes"].as_u64().unwrap_or_default(),
-                    row["peak_mbps"].as_f64().unwrap_or_default()
-                )
-            })
-        })
+            },
+        )
         .collect();
 
     let findings_title = match time_window {
@@ -3010,8 +3303,7 @@ fn prefix_traffic_analysis_card(
             "text": format!("Traffic distribution for {prefix} — {direction} — {findings_title}")
         }),
     ];
-    findings_items.extend(table_rows);
-    if findings.is_empty() {
+    if table_rows.is_empty() {
         findings_items.push(json!({
             "type": "TextBlock",
             "wrap": true,
@@ -3019,7 +3311,37 @@ fn prefix_traffic_analysis_card(
             "text": "No ranked peer data was returned for the selected prefix."
         }));
     } else {
-        findings_items.extend(findings);
+        findings_items.push(json!({
+            "type": "ColumnSet",
+            "spacing": "Medium",
+            "columns": [
+                metric_column("Total avg", &format!("{total_avg_gbps:.2} Gbps"), "good"),
+                metric_column("Peak", &format!("{peak_observed:.2} Gbps"), "attention"),
+                metric_column("Top peer", computed_rows.first().map(|row| row.0.as_str()).unwrap_or("-"), "accent"),
+                metric_column("Top 3 share", &format!("{top_three_share:.1}%"), "warning")
+            ]
+        }));
+        findings_items.push(adaptive_table(
+            &["Peer", "Router", "Avg Gbps", "Peak Gbps", "Share"],
+            table_rows,
+        ));
+        findings_items.push(chart_image_block(
+            "Traffic concentration",
+            horizontal_bar_chart_svg(&concentration_rows, "accent", "%"),
+            "Traffic concentration by peer",
+        ));
+        findings_items.push(chart_image_block(
+            "Peak profile by peer",
+            horizontal_bar_chart_svg(&peak_rows, "warning", " Gbps"),
+            "Peak throughput by peer",
+        ));
+        findings_items.push(sparkline_block(
+            "Throughput trend",
+            &throughput_trend_values,
+            &throughput_trend_labels,
+            "Gbps",
+            "accent",
+        ));
     }
     findings_items.push(main_menu_action_set());
 
@@ -3275,10 +3597,11 @@ fn generic_analysis_card(
 }
 
 fn presentation_section_items(presentation: &Value, fallback_summary: &str) -> Vec<Value> {
-    let sections = presentation["sections"].as_array().cloned().unwrap_or_default();
-    let mut items = vec![
-        json!({ "type": "TextBlock", "weight": "Bolder", "text": "Findings" }),
-    ];
+    let sections = presentation["sections"]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    let mut items = vec![json!({ "type": "TextBlock", "weight": "Bolder", "text": "Findings" })];
     if sections.is_empty() {
         items.push(json!({
             "type": "TextBlock",
@@ -3292,59 +3615,140 @@ fn presentation_section_items(presentation: &Value, fallback_summary: &str) -> V
 
     for section in sections.into_iter().take(3) {
         let title = section["title"].as_str().unwrap_or("Analysis section");
-        let mut lines = Vec::new();
-        if let Some(items_array) = section["items"].as_array() {
-            for item in items_array.iter().take(4) {
-                let label = item["label"].as_str().unwrap_or_default();
-                let value = item["value"]
-                    .as_str()
-                    .map(ToString::to_string)
-                    .or_else(|| item["value"].as_f64().map(|value| format!("{value:.2}")))
-                    .or_else(|| item["value"].as_u64().map(|value| value.to_string()))
-                    .unwrap_or_default();
-                if !value.is_empty() {
-                    lines.push(if label.is_empty() {
-                        value
-                    } else {
-                        format!("{label}: {value}")
-                    });
-                }
-            }
-        }
-        if let Some(rows) = section["rows"].as_array() {
-            for row in rows.iter().take(3) {
-                if let Some(row_obj) = row.as_object() {
-                    let row_text = row_obj
-                        .iter()
-                        .take(4)
-                        .map(|(key, value)| {
-                            let rendered = value
-                                .as_str()
-                                .map(ToString::to_string)
-                                .or_else(|| value.as_f64().map(|v| format!("{v:.2}")))
-                                .or_else(|| value.as_u64().map(|v| v.to_string()))
-                                .unwrap_or_else(|| value.to_string());
-                            format!("{key}: {rendered}")
-                        })
-                        .collect::<Vec<_>>()
-                        .join(" | ");
-                    if !row_text.is_empty() {
-                        lines.push(row_text);
-                    }
-                }
-            }
-        }
-
+        let section_id = section["section_id"].as_str().unwrap_or_default();
+        let section_type = section["section_type"].as_str().unwrap_or_default();
         items.push(json!({
             "type": "TextBlock",
             "wrap": true,
-            "spacing": "Small",
-            "text": if lines.is_empty() {
-                title.to_string()
-            } else {
-                format!("{title}\n{}", lines.join("\n"))
-            }
+            "spacing": "Medium",
+            "weight": "Bolder",
+            "text": title
         }));
+        if let Some(metric_row) = section_metric_columns(&section) {
+            items.push(metric_row);
+        }
+        if let Some(items_array) = section["items"].as_array() {
+            let fact_rows = items_array
+                .iter()
+                .take(5)
+                .filter_map(|item| {
+                    if item["kind"] == "narrative" {
+                        return None;
+                    }
+                    let label = item["label"].as_str().unwrap_or_default();
+                    let value = if item.get("value").is_some() {
+                        render_value(&item["value"])
+                    } else if item.get("text").is_some() {
+                        render_value(&item["text"])
+                    } else {
+                        String::new()
+                    };
+                    if value.is_empty() {
+                        None
+                    } else {
+                        Some(vec![
+                            if label.is_empty() {
+                                "detail".to_string()
+                            } else {
+                                label.to_string()
+                            },
+                            value,
+                        ])
+                    }
+                })
+                .collect::<Vec<_>>();
+            if !fact_rows.is_empty() {
+                items.push(adaptive_table(&["Field", "Value"], fact_rows));
+            }
+            if let Some((headers, rendered_rows, object_rows)) =
+                structured_item_table(items_array, section_type)
+            {
+                let header_refs = headers.iter().map(String::as_str).collect::<Vec<_>>();
+                items.push(adaptive_table(&header_refs, rendered_rows));
+                items.extend(chart_blocks_for_records(
+                    title,
+                    section_id,
+                    &headers,
+                    &object_rows,
+                ));
+            }
+            for item in items_array.iter().take(4) {
+                if item["kind"] == "narrative" {
+                    let text = item["text"].as_str().unwrap_or_default();
+                    if !text.is_empty() {
+                        items.push(json!({
+                            "type": "TextBlock",
+                            "wrap": true,
+                            "spacing": "Small",
+                            "text": text
+                        }));
+                    }
+                }
+            }
+            items.extend(chart_blocks_for_section_items(
+                title,
+                section_id,
+                items_array,
+            ));
+        }
+        if let Some(rows) = section["rows"].as_array() {
+            let columns = section["columns"]
+                .as_array()
+                .map(|values| {
+                    values
+                        .iter()
+                        .filter_map(Value::as_str)
+                        .map(ToString::to_string)
+                        .collect::<Vec<_>>()
+                })
+                .unwrap_or_default();
+            let column_headers = if columns.is_empty() {
+                rows.iter()
+                    .find_map(|row| {
+                        row.as_object()
+                            .map(|obj| obj.keys().take(5).cloned().collect::<Vec<_>>())
+                    })
+                    .unwrap_or_default()
+            } else {
+                columns
+            };
+            if !column_headers.is_empty() {
+                let rendered_rows = rows
+                    .iter()
+                    .take(5)
+                    .filter_map(|row| {
+                        row.as_object().map(|row_obj| {
+                            column_headers
+                                .iter()
+                                .map(|column| {
+                                    row_obj
+                                        .get(column)
+                                        .map(render_value)
+                                        .unwrap_or_else(|| "-".to_string())
+                                })
+                                .collect::<Vec<_>>()
+                        })
+                    })
+                    .collect::<Vec<_>>();
+                if !rendered_rows.is_empty() {
+                    let header_refs = column_headers
+                        .iter()
+                        .map(String::as_str)
+                        .collect::<Vec<_>>();
+                    items.push(adaptive_table(&header_refs, rendered_rows));
+                    let object_rows = rows
+                        .iter()
+                        .filter_map(|row| row.as_object().cloned())
+                        .collect::<Vec<_>>();
+                    items.extend(chart_blocks_for_records(
+                        title,
+                        section_id,
+                        &column_headers,
+                        &object_rows,
+                    ));
+                }
+            }
+        }
     }
 
     items.push(main_menu_action_set());
@@ -3375,6 +3779,391 @@ fn summary_fact_set(presentation: &Value) -> Vec<Value> {
         facts.push(json!({ "title": "Status", "value": "Review prepared" }));
     }
     facts
+}
+
+fn section_metric_columns(section: &Value) -> Option<Value> {
+    let items = section["items"].as_array()?;
+    let metrics = items
+        .iter()
+        .filter_map(|item| {
+            let label = item["label"].as_str()?;
+            let value = numeric_value(&item["value"])?;
+            Some((label, value))
+        })
+        .take(4)
+        .collect::<Vec<_>>();
+    if metrics.len() < 2 {
+        return None;
+    }
+
+    let columns = metrics
+        .into_iter()
+        .map(|(label, value)| {
+            let display = if label.contains("percent") || label.contains("ratio") {
+                format!("{value:.1}%")
+            } else {
+                format_metric_value(label, value)
+            };
+            let color = infer_metric_color(label);
+            metric_column(&title_case_label(label), &display, color)
+        })
+        .collect::<Vec<_>>();
+
+    Some(json!({
+        "type": "ColumnSet",
+        "spacing": "Medium",
+        "columns": columns
+    }))
+}
+
+fn structured_item_table(
+    items: &[Value],
+    section_type: &str,
+) -> Option<(
+    Vec<String>,
+    Vec<Vec<String>>,
+    Vec<serde_json::Map<String, Value>>,
+)> {
+    if section_type == "facts" {
+        return None;
+    }
+    let object_rows = items
+        .iter()
+        .filter_map(|item| item.as_object().cloned())
+        .filter(|row| {
+            !row.contains_key("label")
+                && !row.contains_key("value")
+                && !row.contains_key("kind")
+                && !row.contains_key("text")
+        })
+        .collect::<Vec<_>>();
+    if object_rows.is_empty() {
+        return None;
+    }
+
+    let headers = object_rows
+        .first()
+        .map(|row| row.keys().take(5).cloned().collect::<Vec<_>>())
+        .unwrap_or_default();
+    if headers.is_empty() {
+        return None;
+    }
+
+    let rendered_rows = object_rows
+        .iter()
+        .take(5)
+        .map(|row| {
+            headers
+                .iter()
+                .map(|column| {
+                    row.get(column)
+                        .map(render_value)
+                        .unwrap_or_else(|| "-".to_string())
+                })
+                .collect::<Vec<_>>()
+        })
+        .collect::<Vec<_>>();
+    Some((headers, rendered_rows, object_rows))
+}
+
+fn chart_blocks_for_section_items(title: &str, section_id: &str, items: &[Value]) -> Vec<Value> {
+    let mut blocks = Vec::new();
+
+    let numeric_facts = items
+        .iter()
+        .filter_map(|item| {
+            let label = item["label"].as_str()?;
+            let value = numeric_value(&item["value"])?;
+            Some((title_case_label(label), value))
+        })
+        .collect::<Vec<_>>();
+    if numeric_facts.len() >= 2 {
+        let suffix = if numeric_facts
+            .iter()
+            .any(|(label, _)| label.to_ascii_lowercase().contains("session"))
+        {
+            ""
+        } else {
+            ""
+        };
+        let chart_rows = numeric_facts
+            .iter()
+            .map(|(label, value)| (label.as_str(), *value))
+            .collect::<Vec<_>>();
+        blocks.push(chart_image_block(
+            "Health distribution",
+            horizontal_bar_chart_svg(&chart_rows, "accent", suffix),
+            &format!("{title} health distribution"),
+        ));
+    }
+
+    if section_id.contains("timeline") || section_id.contains("change_candidates") {
+        let by_source = aggregate_counts_by_source(items);
+        if !by_source.is_empty() {
+            let rows = by_source
+                .iter()
+                .map(|(label, value)| (label.as_str(), *value as f64))
+                .collect::<Vec<_>>();
+            blocks.push(chart_image_block(
+                "Event distribution",
+                horizontal_bar_chart_svg(&rows, "warning", ""),
+                &format!("{title} events by source"),
+            ));
+        }
+    }
+
+    if section_id.contains("rca") {
+        let metrics = rca_numeric_metrics(items);
+        if !metrics.is_empty() {
+            let rows = metrics
+                .iter()
+                .map(|(label, value, suffix)| (format!("{label}{suffix}"), *value))
+                .collect::<Vec<_>>();
+            let chart_rows = rows
+                .iter()
+                .map(|(label, value)| (label.as_str(), *value))
+                .collect::<Vec<_>>();
+            blocks.push(chart_image_block(
+                "Platform pressure",
+                horizontal_bar_chart_svg(&chart_rows, "attention", ""),
+                &format!("{title} platform pressure"),
+            ));
+        }
+    }
+
+    blocks
+}
+
+fn chart_blocks_for_records(
+    title: &str,
+    section_id: &str,
+    headers: &[String],
+    rows: &[serde_json::Map<String, Value>],
+) -> Vec<Value> {
+    if rows.is_empty() || headers.is_empty() {
+        return Vec::new();
+    }
+
+    let Some(label_key) = infer_label_key(headers, rows) else {
+        return Vec::new();
+    };
+
+    let numeric_keys = headers
+        .iter()
+        .filter(|header| {
+            rows.iter()
+                .take(4)
+                .any(|row| row.get(*header).and_then(numeric_value).is_some())
+        })
+        .cloned()
+        .collect::<Vec<_>>();
+    if numeric_keys.is_empty() {
+        return Vec::new();
+    }
+
+    let mut chart_keys = preferred_chart_keys(section_id, headers, &numeric_keys);
+    if chart_keys.is_empty() {
+        chart_keys.push(numeric_keys[0].clone());
+    }
+
+    chart_keys
+        .into_iter()
+        .take(2)
+        .filter_map(|metric_key| {
+            let rows_for_chart = rows
+                .iter()
+                .take(5)
+                .filter_map(|row| {
+                    let label = row.get(&label_key).map(render_value)?;
+                    let value = row.get(&metric_key).and_then(numeric_value)?;
+                    Some((label, value))
+                })
+                .collect::<Vec<_>>();
+            if rows_for_chart.is_empty() {
+                return None;
+            }
+
+            let suffix = metric_suffix(&metric_key);
+            let title_text = chart_title(&metric_key);
+            let color = infer_metric_color(&metric_key);
+            let refs = rows_for_chart
+                .iter()
+                .map(|(label, value)| (label.as_str(), *value))
+                .collect::<Vec<_>>();
+            Some(chart_image_block(
+                &title_text,
+                horizontal_bar_chart_svg(&refs, color, suffix),
+                &format!("{title} {}", title_text.to_ascii_lowercase()),
+            ))
+        })
+        .collect()
+}
+
+fn aggregate_counts_by_source(items: &[Value]) -> Vec<(String, usize)> {
+    let mut counts = std::collections::BTreeMap::<String, usize>::new();
+    for item in items {
+        if let Some(source) = item.get("source").and_then(Value::as_str) {
+            *counts.entry(source.to_string()).or_default() += 1;
+        }
+    }
+    counts.into_iter().collect()
+}
+
+fn rca_numeric_metrics(items: &[Value]) -> Vec<(String, f64, &'static str)> {
+    let mut metrics = Vec::new();
+    for item in items {
+        if let Some(record) = item.get("record") {
+            if let Some(value) = record.get("contention_score").and_then(numeric_value) {
+                metrics.push(("Contention".to_string(), value, ""));
+            }
+            if let Some(value) = record.get("latency_ms").and_then(numeric_value) {
+                metrics.push(("Latency".to_string(), value, " ms"));
+            }
+            if let Some(value) = record.get("cpu_percent").and_then(numeric_value) {
+                metrics.push(("CPU".to_string(), value, "%"));
+            }
+            if let Some(value) = record
+                .get("peak_utilisation_percent")
+                .and_then(numeric_value)
+            {
+                metrics.push(("Top port".to_string(), value, "%"));
+            }
+        }
+    }
+    metrics
+}
+
+fn infer_label_key(headers: &[String], rows: &[serde_json::Map<String, Value>]) -> Option<String> {
+    let preferred = [
+        "peer",
+        "asn",
+        "entity",
+        "interface",
+        "device",
+        "source",
+        "timestamp",
+    ];
+    for key in preferred {
+        if headers.iter().any(|header| header == key) {
+            return Some(key.to_string());
+        }
+    }
+    headers.iter().find_map(|header| {
+        rows.first()
+            .and_then(|row| row.get(header))
+            .and_then(Value::as_str)
+            .map(|_| header.clone())
+    })
+}
+
+fn preferred_chart_keys(
+    section_id: &str,
+    headers: &[String],
+    numeric_keys: &[String],
+) -> Vec<String> {
+    let preferred = if section_id.contains("ranking") {
+        vec!["bytes", "peak_mbps", "peak_percent", "speed_mbps"]
+    } else if section_id.contains("ports") || section_id.contains("network") {
+        vec!["peak_percent", "speed_mbps", "avg_percent"]
+    } else {
+        vec![
+            "peak_percent",
+            "bytes",
+            "peak_mbps",
+            "speed_mbps",
+            "prefix_count",
+            "local_pref",
+        ]
+    };
+
+    let mut keys = preferred
+        .into_iter()
+        .filter_map(|wanted| {
+            headers
+                .iter()
+                .find(|header| header.as_str() == wanted)
+                .cloned()
+        })
+        .filter(|header| numeric_keys.contains(header))
+        .collect::<Vec<_>>();
+
+    if keys.is_empty() {
+        keys.extend(numeric_keys.iter().take(2).cloned());
+    }
+    keys
+}
+
+fn chart_title(metric_key: &str) -> String {
+    match metric_key {
+        "bytes" => "Traffic share".to_string(),
+        "peak_mbps" => "Peak throughput".to_string(),
+        "peak_percent" => "Peak utilisation".to_string(),
+        "speed_mbps" => "Port capacity".to_string(),
+        "prefix_count" => "Advertised prefixes".to_string(),
+        "local_pref" => "Local preference".to_string(),
+        other => title_case_label(other),
+    }
+}
+
+fn metric_suffix(metric_key: &str) -> &'static str {
+    match metric_key {
+        "peak_mbps" => " Mbps",
+        "peak_percent" => "%",
+        "speed_mbps" => " Mbps",
+        _ => "",
+    }
+}
+
+fn numeric_value(value: &Value) -> Option<f64> {
+    value
+        .as_f64()
+        .or_else(|| value.as_u64().map(|number| number as f64))
+        .or_else(|| value.as_i64().map(|number| number as f64))
+}
+
+fn title_case_label(label: &str) -> String {
+    label
+        .split('_')
+        .map(|part| {
+            let mut chars = part.chars();
+            match chars.next() {
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn infer_metric_color(metric_key: &str) -> &'static str {
+    let normalized = metric_key.to_ascii_lowercase();
+    if normalized.contains("latency")
+        || normalized.contains("contention")
+        || normalized.contains("peak")
+        || normalized.contains("missing")
+        || normalized.contains("unhealthy")
+    {
+        "attention"
+    } else if normalized.contains("target") || normalized.contains("healthy") {
+        "good"
+    } else {
+        "accent"
+    }
+}
+
+fn format_metric_value(label: &str, value: f64) -> String {
+    let normalized = label.to_ascii_lowercase();
+    if normalized.contains("percent") || normalized.contains("ratio") {
+        format!("{value:.1}%")
+    } else if normalized.contains("latency") {
+        format!("{value:.1} ms")
+    } else if normalized.contains("bytes") {
+        format!("{value:.0}")
+    } else if normalized.contains("speed") || normalized.contains("throughput") {
+        format!("{value:.0} Mbps")
+    } else {
+        format!("{value:.0}")
+    }
 }
 
 fn main_menu_action_set() -> Value {
@@ -3437,6 +4226,474 @@ fn prefix_traffic_peak_time_label(time_window: &str) -> &'static str {
         "Last 7 days" => "Tuesday 14:35 UTC",
         _ => "14:35 UTC",
     }
+}
+
+fn adaptive_table(headers: &[&str], rows: Vec<Vec<String>>) -> Value {
+    let columns = headers
+        .iter()
+        .map(|_| json!({ "width": 1 }))
+        .collect::<Vec<_>>();
+    let mut table_rows = Vec::with_capacity(rows.len() + 1);
+    table_rows.push(adaptive_table_row(
+        headers
+            .iter()
+            .map(|header| adaptive_header_cell(header))
+            .collect(),
+        Some("accent"),
+    ));
+    for row in rows {
+        table_rows.push(adaptive_table_row(
+            row.iter().map(|cell| adaptive_text_cell(cell)).collect(),
+            None,
+        ));
+    }
+
+    json!({
+        "type": "Table",
+        "gridStyle": "accent",
+        "firstRowAsHeader": true,
+        "showGridLines": true,
+        "columns": columns,
+        "rows": table_rows
+    })
+}
+
+fn adaptive_table_row(cells: Vec<Value>, style: Option<&str>) -> Value {
+    let mut row = json!({
+        "type": "TableRow",
+        "cells": cells
+    });
+    if let Some(style) = style
+        && let Some(obj) = row.as_object_mut()
+    {
+        obj.insert("style".to_string(), Value::String(style.to_string()));
+    }
+    row
+}
+
+fn adaptive_text_cell(text: &str) -> Value {
+    json!({
+        "type": "TableCell",
+        "items": [
+            {
+                "type": "TextBlock",
+                "wrap": true,
+                "text": text
+            }
+        ]
+    })
+}
+
+fn adaptive_header_cell(text: &str) -> Value {
+    json!({
+        "type": "TableCell",
+        "items": [
+            {
+                "type": "TextBlock",
+                "wrap": true,
+                "weight": "Bolder",
+                "text": text
+            }
+        ]
+    })
+}
+
+fn metric_column(title: &str, value: &str, color: &str) -> Value {
+    json!({
+        "type": "Column",
+        "width": "stretch",
+        "items": [
+            {
+                "type": "Container",
+                "style": "emphasis",
+                "items": [
+                    {
+                        "type": "TextBlock",
+                        "text": title,
+                        "isSubtle": true,
+                        "wrap": true,
+                        "spacing": "None"
+                    },
+                    {
+                        "type": "TextBlock",
+                        "text": value,
+                        "weight": "Bolder",
+                        "size": "Medium",
+                        "color": color,
+                        "wrap": true,
+                        "spacing": "Small"
+                    }
+                ]
+            }
+        ]
+    })
+}
+
+fn horizontal_bar(label: &str, value: &str, ratio: f64, color: &str) -> Value {
+    let width = format!("{:.0}%", (ratio.clamp(0.0, 1.0) * 100.0).max(4.0));
+    json!({
+        "type": "Container",
+        "spacing": "Small",
+        "items": [
+            {
+                "type": "ColumnSet",
+                "columns": [
+                    {
+                        "type": "Column",
+                        "width": "stretch",
+                        "items": [
+                            {
+                                "type": "TextBlock",
+                                "text": label,
+                                "wrap": true
+                            }
+                        ]
+                    },
+                    {
+                        "type": "Column",
+                        "width": "auto",
+                        "items": [
+                            {
+                                "type": "TextBlock",
+                                "text": value,
+                                "weight": "Bolder",
+                                "color": color
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "type": "ColumnSet",
+                "spacing": "Small",
+                "columns": [
+                    {
+                        "type": "Column",
+                        "width": width,
+                        "items": [
+                            {
+                                "type": "Container",
+                                "style": color,
+                                "minHeight": "10px",
+                                "items": []
+                            }
+                        ]
+                    },
+                    {
+                        "type": "Column",
+                        "width": "stretch",
+                        "items": [
+                            {
+                                "type": "Container",
+                                "style": "emphasis",
+                                "minHeight": "10px",
+                                "items": []
+                            }
+                        ]
+                    }
+                ]
+            }
+        ]
+    })
+}
+
+fn chart_color(color: &str) -> &'static str {
+    match color {
+        "good" => "#16A34A",
+        "warning" => "#D97706",
+        "attention" => "#DC2626",
+        "accent" => "#2563EB",
+        _ => "#475569",
+    }
+}
+
+fn svg_data_uri(svg: &str) -> String {
+    let mut encoded = String::with_capacity(svg.len() * 2);
+    for byte in svg.bytes() {
+        match byte {
+            b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' => {
+                encoded.push(byte as char)
+            }
+            _ => encoded.push_str(&format!("%{byte:02X}")),
+        }
+    }
+    format!("data:image/svg+xml;charset=utf-8,{encoded}")
+}
+
+fn chart_image_block(title: &str, svg: String, alt_text: &str) -> Value {
+    json!({
+        "type": "Container",
+        "style": "emphasis",
+        "spacing": "Medium",
+        "items": [
+            {
+                "type": "TextBlock",
+                "text": title,
+                "weight": "Bolder"
+            },
+            {
+                "type": "Image",
+                "url": svg_data_uri(&svg),
+                "altText": alt_text,
+                "size": "Stretch"
+            }
+        ]
+    })
+}
+
+fn line_chart_svg(values: &[f64], labels: &[&str], color: &str, unit: &str) -> String {
+    let width = 520.0_f64;
+    let height = 220.0_f64;
+    let left = 44.0_f64;
+    let right = width - 24.0;
+    let top = 24.0_f64;
+    let bottom = height - 40.0;
+    let stroke = chart_color(color);
+    let grid = "#CBD5E1";
+    let text = "#334155";
+    let fill = match color {
+        "good" => "#DCFCE7",
+        "warning" => "#FEF3C7",
+        "attention" => "#FEE2E2",
+        "accent" => "#DBEAFE",
+        _ => "#E2E8F0",
+    };
+    let min_value = values.iter().copied().fold(f64::INFINITY, f64::min);
+    let max_value = values.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    let (min_value, max_value) = if values.is_empty() {
+        (0.0, 1.0)
+    } else if (max_value - min_value).abs() <= f64::EPSILON {
+        (min_value.min(0.0), max_value + 1.0)
+    } else {
+        (min_value, max_value)
+    };
+    let span = (max_value - min_value).max(0.0001);
+
+    let points = values
+        .iter()
+        .enumerate()
+        .map(|(index, value)| {
+            let x = if values.len() <= 1 {
+                (left + right) / 2.0
+            } else {
+                left + (index as f64 * (right - left) / (values.len() - 1) as f64)
+            };
+            let y = bottom - ((*value - min_value) / span) * (bottom - top);
+            format!("{x:.1},{y:.1}")
+        })
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    let area_points = if points.is_empty() {
+        String::new()
+    } else {
+        format!("{left:.1},{bottom:.1} {points} {right:.1},{bottom:.1}")
+    };
+
+    let min_label = format!("{min_value:.2}{unit}");
+    let max_label = format!("{max_value:.2}{unit}");
+    let start_label = labels.first().copied().unwrap_or("start");
+    let end_label = labels.last().copied().unwrap_or("end");
+    let middle = (top + bottom) / 2.0;
+    let last_value = values.last().copied().unwrap_or(min_value);
+    let last_y = bottom - ((last_value - min_value) / span) * (bottom - top);
+    let x_axis_label_y = height - 14.0;
+    let end_label_x = right - 18.0;
+    let max_label_y = top + 4.0;
+    let min_label_y = bottom + 4.0;
+
+    format!(
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {width:.0} {height:.0}' width='{width:.0}' height='{height:.0}'>\
+<rect width='100%' height='100%' rx='16' fill='white'/>\
+<line x1='{left:.1}' y1='{top:.1}' x2='{left:.1}' y2='{bottom:.1}' stroke='{grid}' stroke-width='1'/>\
+<line x1='{left:.1}' y1='{bottom:.1}' x2='{right:.1}' y2='{bottom:.1}' stroke='{grid}' stroke-width='1'/>\
+<line x1='{left:.1}' y1='{top:.1}' x2='{right:.1}' y2='{top:.1}' stroke='{grid}' stroke-width='1' stroke-dasharray='4 4'/>\
+<line x1='{left:.1}' y1='{middle:.1}' x2='{right:.1}' y2='{middle:.1}' stroke='{grid}' stroke-width='1' stroke-dasharray='4 4'/>\
+<polygon points='{area_points}' fill='{fill}' opacity='0.9'/>\
+<polyline points='{points}' fill='none' stroke='{stroke}' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'/>\
+<circle cx='{right:.1}' cy='{last_y:.1}' r='5' fill='{stroke}'/>\
+<text x='{left:.1}' y='{x_axis_label_y:.1}' font-size='12' fill='{text}'>{start_label}</text>\
+<text x='{end_label_x:.1}' y='{x_axis_label_y:.1}' font-size='12' text-anchor='end' fill='{text}'>{end_label}</text>\
+<text x='8' y='{max_label_y:.1}' font-size='12' fill='{text}'>{max_label}</text>\
+<text x='8' y='{min_label_y:.1}' font-size='12' fill='{text}'>{min_label}</text>\
+</svg>"
+    )
+}
+
+fn horizontal_bar_chart_svg(rows: &[(&str, f64)], color: &str, suffix: &str) -> String {
+    let width = 520.0_f64;
+    let row_height = 34.0_f64;
+    let top = 24.0_f64;
+    let left = 140.0_f64;
+    let bar_width = 320.0_f64;
+    let height = top + (rows.len().max(1) as f64 * row_height) + 24.0;
+    let stroke = chart_color(color);
+    let fill = match color {
+        "good" => "#DCFCE7",
+        "warning" => "#FEF3C7",
+        "attention" => "#FEE2E2",
+        "accent" => "#DBEAFE",
+        _ => "#E2E8F0",
+    };
+    let text = "#334155";
+    let grid = "#E2E8F0";
+    let max_value = rows
+        .iter()
+        .map(|(_, value)| *value)
+        .fold(0.0_f64, f64::max)
+        .max(1.0);
+
+    let mut bars = String::new();
+    for (index, (label, value)) in rows.iter().enumerate() {
+        let y = top + index as f64 * row_height;
+        let scaled = (*value / max_value).clamp(0.0, 1.0) * bar_width;
+        let baseline_y = y + 16.0;
+        bars.push_str(&format!(
+            "<text x='12' y='{baseline_y:.1}' font-size='12' fill='{text}'>{label}</text>\
+<rect x='{left:.1}' y='{y:.1}' width='{bar_width:.1}' height='16' rx='8' fill='{grid}'/>\
+<rect x='{left:.1}' y='{y:.1}' width='{scaled:.1}' height='16' rx='8' fill='{fill}' stroke='{stroke}' stroke-width='1'/>\
+<text x='{width_minus:.1}' y='{baseline_y:.1}' text-anchor='end' font-size='12' fill='{text}'>{value:.1}{suffix}</text>",
+            width_minus = width - 12.0
+        ));
+    }
+
+    format!(
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 {width:.0} {height:.0}' width='{width:.0}' height='{height:.0}'>\
+<rect width='100%' height='100%' rx='16' fill='white'/>\
+{bars}\
+</svg>"
+    )
+}
+
+fn sparkline_block(title: &str, values: &[f64], labels: &[&str], unit: &str, color: &str) -> Value {
+    chart_image_block(title, line_chart_svg(values, labels, color, unit), title)
+}
+
+fn ascii_sparkline(values: &[f64]) -> String {
+    if values.is_empty() {
+        return "no-data".to_string();
+    }
+    let min_value = values.iter().copied().fold(f64::INFINITY, f64::min);
+    let max_value = values.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+    let steps = [".", ":", "-", "=", "+", "*", "#", "@"];
+    let span = (max_value - min_value).max(0.0001);
+
+    values
+        .iter()
+        .map(|value| {
+            let normalized = ((*value - min_value) / span).clamp(0.0, 1.0);
+            let index = (normalized * ((steps.len() - 1) as f64)).round() as usize;
+            steps[index]
+        })
+        .collect::<Vec<_>>()
+        .join("")
+}
+
+fn confidence_ratio(confidence: &str) -> f64 {
+    match confidence {
+        "High" => 0.87,
+        "Medium-high" => 0.72,
+        "Medium" => 0.58,
+        _ => 0.35,
+    }
+}
+
+fn render_value(value: &Value) -> String {
+    value
+        .as_str()
+        .map(ToString::to_string)
+        .or_else(|| value.as_f64().map(|number| format!("{number:.2}")))
+        .or_else(|| value.as_u64().map(|number| number.to_string()))
+        .or_else(|| value.as_i64().map(|number| number.to_string()))
+        .unwrap_or_else(|| value.to_string())
+}
+
+fn build_port_utilisation_rows(
+    busiest_port: &str,
+    threshold: f64,
+    time_window: &str,
+) -> Vec<(String, f64, f64, f64, String)> {
+    let peak = port_peak_utilisation(threshold, time_window);
+    let base_avg = (peak * 0.89).round();
+    [
+        busiest_port.to_string(),
+        "eth1/7".to_string(),
+        "eth1/11".to_string(),
+    ]
+    .into_iter()
+    .enumerate()
+    .map(|(index, port)| {
+        let peak_adjustment = (index as f64) * 3.0;
+        let avg = (base_avg - peak_adjustment).max(threshold - 4.0);
+        let peak_value = (peak - peak_adjustment).max(avg + 2.0);
+        let headroom = (100.0 - peak_value).max(0.0);
+        let state = if index == 0 {
+            "Critical"
+        } else if peak_value >= threshold + 2.0 {
+            "Warning"
+        } else {
+            "Watch"
+        };
+        (port, avg, peak_value, headroom, state.to_string())
+    })
+    .collect()
+}
+
+fn build_port_utilisation_trend(
+    avg_utilisation: f64,
+    peak_utilisation: f64,
+    time_window: &str,
+) -> Vec<(String, f64)> {
+    let baseline = match time_window {
+        "Last hour" => avg_utilisation - 8.0,
+        "Last 7 days" => avg_utilisation - 5.0,
+        _ => avg_utilisation - 6.0,
+    };
+    vec![
+        ("08h".to_string(), baseline.max(0.0)),
+        ("10h".to_string(), (baseline + 4.0).max(0.0)),
+        ("12h".to_string(), avg_utilisation.max(0.0)),
+        ("14h".to_string(), (peak_utilisation - 4.0).max(0.0)),
+        ("16h".to_string(), peak_utilisation.max(0.0)),
+    ]
+}
+
+fn build_prefix_traffic_trend(
+    total_avg_gbps: f64,
+    peak_observed: f64,
+    time_window: &str,
+) -> Vec<(String, f64)> {
+    let leading = match time_window {
+        "Last hour" => total_avg_gbps * 0.72,
+        "Last 7 days" => total_avg_gbps * 0.91,
+        _ => total_avg_gbps * 0.78,
+    };
+    vec![
+        ("T-4".to_string(), leading.max(0.0)),
+        ("T-3".to_string(), (leading * 0.94).max(0.0)),
+        ("T-2".to_string(), total_avg_gbps.max(0.0)),
+        ("T-1".to_string(), (peak_observed * 0.88).max(0.0)),
+        ("Now".to_string(), peak_observed.max(0.0)),
+    ]
+}
+
+fn parse_percent_value(value: &str) -> f64 {
+    value.trim_end_matches('%').parse::<f64>().unwrap_or(0.0)
+}
+
+fn build_slo_trend(current_value: f64, time_window: &str) -> Vec<(String, f64)> {
+    let start = match time_window {
+        "Last hour" => current_value + 0.28,
+        "Last 7 days" => current_value + 0.12,
+        _ => current_value + 0.18,
+    };
+    vec![
+        ("P1".to_string(), start),
+        ("P2".to_string(), start - 0.05),
+        ("P3".to_string(), start - 0.11),
+        ("P4".to_string(), start - 0.17),
+        ("Now".to_string(), current_value),
+    ]
 }
 
 fn run_parameterized_action(
@@ -3519,7 +4776,10 @@ fn select_run(
             run_change_correlation("mobile-data", resolvers, fixtures),
         )
     } else if normalized.contains("vm") || normalized.contains("rca") {
-        ("vm-rca", run_vm_rca("mobile-data", None, resolvers, fixtures))
+        (
+            "vm-rca",
+            run_vm_rca("mobile-data", None, resolvers, fixtures),
+        )
     } else {
         (
             "port-utilisation",
@@ -3575,7 +4835,11 @@ fn composed_triage_presentation(
         columns: Vec::new(),
         rows: Vec::new(),
     });
-    sections.extend(prefix_sections("change", "Recent changes", &change.sections));
+    sections.extend(prefix_sections(
+        "change",
+        "Recent changes",
+        &change.sections,
+    ));
     sections.extend(prefix_sections("rca", "RCA", &vm_rca.sections));
     sections.extend(prefix_sections("network", "Network", &port.sections));
 
@@ -3594,10 +4858,7 @@ fn composed_triage_presentation(
     serde_json::to_value(PresentationModel {
         playbook_id: "tx.playbook.service_degradation_triage".to_string(),
         result: telco_x::playbooks::PlaybookResultKind::Success,
-        summary: format!(
-            "{} {} {}",
-            vm_rca.summary, change.summary, port.summary
-        ),
+        summary: format!("{} {} {}", vm_rca.summary, change.summary, port.summary),
         severity,
         entities: Vec::new(),
         evidence_refs: change
@@ -3668,7 +4929,12 @@ mod tests {
         assert_eq!(output.playbook_id, "tx.playbook.port_utilisation");
         assert!(output.adaptive_card.is_none());
         assert!(output.rendered_card.is_none());
-        assert!(output.messages.as_array().is_some_and(|messages| !messages.is_empty()));
+        assert!(
+            output
+                .messages
+                .as_array()
+                .is_some_and(|messages| !messages.is_empty())
+        );
     }
 
     #[test]
@@ -3780,6 +5046,15 @@ mod tests {
         let output = execute_present(&input);
         assert_eq!(output.scenario, "prefix-traffic");
         assert_eq!(output.playbook_id, "tx.playbook.prefix_traffic");
+        assert_eq!(output.messages.as_array().map(Vec::len), Some(5));
+        assert_eq!(
+            output.messages[3]["card"]["body"][0]["items"][0]["text"],
+            "Findings"
+        );
+        assert_eq!(
+            output.messages[3]["card"]["body"][0]["items"][1]["text"],
+            "Traffic distribution for 10.24.0.0/16 — Inbound — Last 24h"
+        );
     }
 
     #[test]
@@ -3829,6 +5104,7 @@ mod tests {
         assert_eq!(output.scenario, "slo-status-form");
         assert_eq!(output.playbook_id, "tx.playbook.slo_status");
         assert!(output.rendered_card.is_none());
+        assert_eq!(output.messages.as_array().map(Vec::len), Some(5));
         assert_eq!(
             output.messages[0]["card"]["body"][0]["items"][2]["facts"][0]["value"],
             "svc-internet-edge"
@@ -3838,7 +5114,7 @@ mod tests {
             "Staging"
         );
         assert_eq!(
-            output.messages[3]["card"]["body"][0]["items"][2]["facts"][1]["value"],
+            output.messages[4]["card"]["body"][0]["items"][2]["facts"][3]["value"],
             "99.50%"
         );
     }
@@ -3883,7 +5159,10 @@ mod tests {
             source_provider: Some("webchat".to_string()),
         };
         let output = execute_present(&input);
-        let card = output.rendered_card.as_ref().expect("free ports parameters card");
+        let card = output
+            .rendered_card
+            .as_ref()
+            .expect("free ports parameters card");
         assert_eq!(output.scenario, "menu-free-ports-parameters");
         assert_eq!(card["body"][0]["text"], "Free ACI ports");
         assert_eq!(card["body"][2]["id"], "device");
@@ -3937,7 +5216,10 @@ mod tests {
             source_provider: Some("webchat".to_string()),
         };
         let output = execute_present(&input);
-        let card = output.rendered_card.as_ref().expect("vm rca parameters card");
+        let card = output
+            .rendered_card
+            .as_ref()
+            .expect("vm rca parameters card");
         assert_eq!(output.scenario, "menu-vm-rca-parameters");
         assert_eq!(card["body"][0]["text"], "Run VM RCA");
         assert_eq!(card["body"][3]["id"], "service");
@@ -3978,6 +5260,7 @@ mod tests {
         assert!(output.rendered_card.is_none());
         assert_eq!(output.scenario, "port-utilisation-form");
         assert_eq!(output.playbook_id, "tx.playbook.port_utilisation");
+        assert_eq!(output.messages.as_array().map(Vec::len), Some(5));
         assert_eq!(
             output.messages[0]["card"]["body"][0]["items"][2]["facts"][0]["value"],
             "ACI POD / NODE 3101"
@@ -4029,6 +5312,7 @@ mod tests {
         assert!(output.rendered_card.is_none());
         assert_eq!(output.scenario, "vm-rca-form");
         assert_eq!(output.playbook_id, "tx.playbook.vm_rca");
+        assert_eq!(output.messages.as_array().map(Vec::len), Some(5));
         assert_eq!(
             output.messages[0]["card"]["body"][0]["items"][2]["facts"][0]["value"],
             "Internet Gateway"
@@ -4057,7 +5341,10 @@ mod tests {
             source_provider: Some("webchat".to_string()),
         };
         let output = execute_present(&input);
-        let card = output.rendered_card.as_ref().expect("prefix parameters card");
+        let card = output
+            .rendered_card
+            .as_ref()
+            .expect("prefix parameters card");
         assert_eq!(output.scenario, "menu-prefix-traffic-parameters");
         assert_eq!(card["body"][0]["text"], "Prefix traffic distribution");
         assert_eq!(card["body"][3]["id"], "prefix");
@@ -4080,8 +5367,15 @@ mod tests {
         assert!(output.rendered_card.is_none());
         assert_eq!(output.scenario, "prefix-traffic-form");
         assert_eq!(output.playbook_id, "tx.playbook.prefix_traffic");
-        assert_eq!(output.messages[0]["card"]["body"][0]["items"][2]["facts"][0]["value"], "10.24.0.0/16");
-        assert_eq!(output.messages[3]["card"]["body"][0]["items"][0]["text"], "Findings");
+        assert_eq!(output.messages.as_array().map(Vec::len), Some(5));
+        assert_eq!(
+            output.messages[0]["card"]["body"][0]["items"][2]["facts"][0]["value"],
+            "10.24.0.0/16"
+        );
+        assert_eq!(
+            output.messages[3]["card"]["body"][0]["items"][0]["text"],
+            "Findings"
+        );
     }
 
     #[test]
@@ -4099,6 +5393,7 @@ mod tests {
         };
         let output = execute_present(&input);
         assert!(output.rendered_card.is_none());
+        assert_eq!(output.messages.as_array().map(Vec::len), Some(5));
         assert_eq!(
             output.messages[0]["card"]["body"][0]["items"][2]["facts"][2]["value"],
             "Last 7 days"
@@ -4150,6 +5445,7 @@ mod tests {
             source_provider: Some("webchat".to_string()),
         };
         let output = execute_present(&input);
+        assert_eq!(output.messages.as_array().map(Vec::len), Some(5));
         assert_eq!(
             output.messages[0]["card"]["body"][0]["items"][2]["facts"][1]["value"],
             "Outbound"
@@ -4161,6 +5457,183 @@ mod tests {
         assert_eq!(
             output.messages[3]["card"]["body"][0]["items"][1]["text"],
             "Traffic distribution for 10.24.0.0/16 — Outbound — Last 7d"
+        );
+    }
+
+    fn findings_image_alt_texts(output: &PresentOutput) -> Vec<String> {
+        output.messages[3]["card"]["body"][0]["items"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .flat_map(|item| {
+                let mut images = Vec::new();
+                if item["type"] == "Image" {
+                    if let Some(alt_text) = item["altText"].as_str() {
+                        images.push(alt_text.to_string());
+                    }
+                }
+                if let Some(nested) = item["items"].as_array() {
+                    for nested_item in nested {
+                        if nested_item["type"] == "Image"
+                            && let Some(alt_text) = nested_item["altText"].as_str()
+                        {
+                            images.push(alt_text.to_string());
+                        }
+                    }
+                }
+                images
+            })
+            .collect()
+    }
+
+    #[test]
+    fn bgp_findings_include_health_chart() {
+        let input = PresentInput {
+            query: Some(String::new()),
+            step: Some("run:bgp-advertisers-form".to_string()),
+            metadata: Some(json!({
+                "prefix": "10.24.0.0/16",
+                "time_window": "Last 24 hours"
+            })),
+            message: None,
+            source_provider: Some("webchat".to_string()),
+        };
+        let output = execute_present(&input);
+        assert_eq!(output.messages.as_array().map(Vec::len), Some(5));
+        assert!(
+            findings_image_alt_texts(&output)
+                .iter()
+                .any(|value| { value == "BGP advertiser health health distribution" })
+        );
+    }
+
+    #[test]
+    fn top_source_asn_findings_include_ranked_charts() {
+        let input = PresentInput {
+            query: Some(String::new()),
+            step: Some("run:top-source-asns-form".to_string()),
+            metadata: Some(json!({
+                "prefix": "10.24.0.0/16",
+                "direction": "Inbound",
+                "time_window": "Last 24 hours"
+            })),
+            message: None,
+            source_provider: Some("webchat".to_string()),
+        };
+        let output = execute_present(&input);
+        let images = findings_image_alt_texts(&output);
+        assert!(
+            images
+                .iter()
+                .any(|value| value == "Source ASN ranking traffic share")
+        );
+        assert!(
+            images
+                .iter()
+                .any(|value| value == "Source ASN ranking peak throughput")
+        );
+    }
+
+    #[test]
+    fn free_port_findings_include_capacity_chart() {
+        let input = PresentInput {
+            query: Some(String::new()),
+            step: Some("run:free-ports-form".to_string()),
+            metadata: Some(json!({
+                "device": "2201",
+                "time_window": "Last 24 hours"
+            })),
+            message: None,
+            source_provider: Some("webchat".to_string()),
+        };
+        let output = execute_present(&input);
+        assert!(
+            findings_image_alt_texts(&output)
+                .iter()
+                .any(|value| value == "Free ports port capacity")
+        );
+    }
+
+    #[test]
+    fn noisy_neighbour_findings_include_platform_pressure_chart() {
+        let input = PresentInput {
+            query: Some(String::new()),
+            step: Some("run:noisy-neighbour-form".to_string()),
+            metadata: Some(json!({
+                "scope": "riyadh-core",
+                "time_window": "Last 24 hours"
+            })),
+            message: None,
+            source_provider: Some("webchat".to_string()),
+        };
+        let output = execute_present(&input);
+        assert!(
+            findings_image_alt_texts(&output)
+                .iter()
+                .any(|value| value == "Noisy neighbour analysis platform pressure")
+        );
+    }
+
+    #[test]
+    fn scope_health_findings_include_utilisation_chart() {
+        let input = PresentInput {
+            query: Some(String::new()),
+            step: Some("run:scope-health-sweep-form".to_string()),
+            metadata: Some(json!({
+                "scope": "riyadh-core",
+                "time_window": "Last 24 hours"
+            })),
+            message: None,
+            source_provider: Some("webchat".to_string()),
+        };
+        let output = execute_present(&input);
+        assert!(
+            findings_image_alt_texts(&output)
+                .iter()
+                .any(|value| value == "Affected entities peak utilisation")
+        );
+    }
+
+    #[test]
+    fn change_correlation_findings_include_event_distribution_chart() {
+        let input = PresentInput {
+            query: Some(String::new()),
+            step: Some("run:change-correlation-form".to_string()),
+            metadata: Some(json!({
+                "service": "mobile-data",
+                "source_system": "Change registry",
+                "time_window": "Last 24 hours"
+            })),
+            message: None,
+            source_provider: Some("webchat".to_string()),
+        };
+        let output = execute_present(&input);
+        assert!(
+            findings_image_alt_texts(&output)
+                .iter()
+                .any(|value| value == "Change candidates events by source")
+        );
+    }
+
+    #[test]
+    fn service_degradation_findings_include_composed_charts() {
+        let input = PresentInput {
+            query: Some(String::new()),
+            step: Some("run:service-degradation-form".to_string()),
+            metadata: Some(json!({
+                "service": "mobile-data",
+                "cluster": "default",
+                "time_window": "Last 24 hours"
+            })),
+            message: None,
+            source_provider: Some("webchat".to_string()),
+        };
+        let output = execute_present(&input);
+        let images = findings_image_alt_texts(&output);
+        assert!(
+            images
+                .iter()
+                .any(|value| value == "Recent changes: Change candidates events by source")
         );
     }
 }

@@ -133,7 +133,7 @@ dependencies = [
 
 [[package]]
 name = "component-telco-present"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "greentic-interfaces-guest",
  "greentic-messaging-renderer",
@@ -289,7 +289,7 @@ dependencies = [
 
 [[package]]
 name = "greentic-messaging-renderer"
-version = "0.4.85"
+version = "0.4.98"
 dependencies = [
  "greentic-types",
  "serde",
@@ -643,7 +643,7 @@ dependencies = [
 
 [[package]]
 name = "telco-x"
-version = "0.1.9"
+version = "0.1.11"
 dependencies = [
  "chrono",
  "serde",
