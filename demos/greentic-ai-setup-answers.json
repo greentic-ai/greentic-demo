@@ -17,8 +17,8 @@
       "default_channel": "general",
       "public_base_url": "http://localhost:8080",
       "slack_app_id": "A0000000000",
-      "slack_bot_token": "xoxb-demo-greentic-ai-bot-token-not-real",
-      "slack_configuration_token": "xoxe-demo-greentic-ai-config-token-not-real"
+      "slack_bot_token": "",
+      "slack_configuration_token": ""
     },
     "messaging-teams": {
       "channel_id": "19:demo-channel-id@thread.tacv2",

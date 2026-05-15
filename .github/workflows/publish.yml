@@ -1,10 +1,22 @@
-name: Publish Demo Bundles
+name: Publish Demo Artifacts
 
 on:
   push:
+    branches:
+      - main
+      - master
     tags:
       - "v*"
   workflow_dispatch:
+    inputs:
+      create_github_release:
+        description: "Create/update GitHub Release and attach demo artifacts"
+        type: boolean
+        default: false
+      publish_bundles:
+        description: "Publish .gtbundle artifacts to GHCR"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -137,7 +149,11 @@ jobs:
               wkg oci push "$latest_ref" "$artifact"
               echo "${component_name}_latest=oci://${latest_ref}" >> .artifacts/component-refs.txt
             fi
-          done < <(find crates -mindepth 2 -maxdepth 2 -type d \( -name 'component-*' -o -name 'greentic-*' \) | sort)
+          done < <(
+            find crates -mindepth 2 -maxdepth 2 -type d \( -name 'component-*' -o -name 'greentic-*' \) \
+              ! -path 'crates/telco-x-demo/component-telco-present' \
+              | sort
+          )
 
       - name: Skip component publish when unchanged
         if: steps.component-changes.outputs.components != 'true'
@@ -228,9 +244,9 @@ jobs:
         id: artifacts
         run: |
           shopt -s nullglob
-          bundles=(demos/*.gtbundle)
           packs=(demos/*.gtpack)
-          if [ ${#bundles[@]} -eq 0 ] && [ ${#packs[@]} -eq 0 ]; then
+          answers=(demos/*-create-answers.json demos/*-setup-answers.json)
+          if [ ${#packs[@]} -eq 0 ] && [ ${#answers[@]} -eq 0 ]; then
             echo "found=false" >> "$GITHUB_OUTPUT"
             echo "No demo artifacts found. Skipping publish steps."
           else
@@ -243,8 +259,9 @@ jobs:
         with:
           name: demo-artifacts
           path: |
-            demos/*.gtbundle
             demos/*.gtpack
+            demos/*-create-answers.json
+            demos/*-setup-answers.json
           if-no-files-found: error
 
       - name: Publish demo artifacts to GHCR
@@ -256,15 +273,8 @@ jobs:
           REF_TYPE: ${{ github.ref_type }}
           BRANCH_NAME: ${{ github.ref_name }}
           PUBLISH_VERSION: ${{ needs.resolve-version.outputs.publish_version }}
-        run: scripts/publish_demo_bundles_oci.sh
-
-      - name: Upload bundle refs
-        if: steps.artifacts.outputs.found == 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: demo-bundle-refs
-          path: .artifacts/bundle-refs.txt
-          if-no-files-found: error
+          PUBLISH_BUNDLES: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_bundles == true && '1' || '0' }}
+        run: scripts/publish_demo_artifacts_oci.sh
 
       - name: Upload pack refs
         if: steps.artifacts.outputs.found == 'true'
@@ -274,8 +284,24 @@ jobs:
           path: .artifacts/pack-refs.txt
           if-no-files-found: ignore
 
+      - name: Upload answer refs
+        if: steps.artifacts.outputs.found == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-answer-refs
+          path: .artifacts/answer-refs.txt
+          if-no-files-found: error
+
+      - name: Upload bundle refs
+        if: steps.artifacts.outputs.found == 'true' && github.event_name == 'workflow_dispatch' && inputs.publish_bundles == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-bundle-refs
+          path: .artifacts/bundle-refs.txt
+          if-no-files-found: error
+
       - name: Ensure release exists
-        if: steps.artifacts.outputs.found == 'true' && needs.resolve-version.outputs.publish_version != ''
+        if: steps.artifacts.outputs.found == 'true' && needs.resolve-version.outputs.publish_version != '' && github.event_name == 'workflow_dispatch' && inputs.create_github_release == true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG_NAME: ${{ needs.resolve-version.outputs.publish_version }}
@@ -286,7 +312,7 @@ jobs:
           fi
 
       - name: Attach bundles and answers to release
-        if: steps.artifacts.outputs.found == 'true' && needs.resolve-version.outputs.publish_version != ''
+        if: steps.artifacts.outputs.found == 'true' && needs.resolve-version.outputs.publish_version != '' && github.event_name == 'workflow_dispatch' && inputs.create_github_release == true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG_NAME: ${{ needs.resolve-version.outputs.publish_version }}
@@ -309,7 +335,7 @@ jobs:
           gh release upload "$TAG_NAME" "${files[@]}" --clobber
 
       - name: Verify attached demo release assets
-        if: steps.artifacts.outputs.found == 'true' && needs.resolve-version.outputs.publish_version != ''
+        if: steps.artifacts.outputs.found == 'true' && needs.resolve-version.outputs.publish_version != '' && github.event_name == 'workflow_dispatch' && inputs.create_github_release == true
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAG_NAME: ${{ needs.resolve-version.outputs.publish_version }}
