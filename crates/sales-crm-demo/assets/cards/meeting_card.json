@@ -56,7 +56,8 @@
                   "id": "meeting_date",
                   "label": "Date",
                   "isRequired": true,
-                  "errorMessage": "Date is required"
+                  "errorMessage": "Date is required",
+                  "value": "${prefill_date_iso}"
                 }
               ]
             },
@@ -69,7 +70,8 @@
                   "id": "meeting_time",
                   "label": "Time",
                   "isRequired": true,
-                  "errorMessage": "Time is required"
+                  "errorMessage": "Time is required",
+                  "value": "${prefill_time}"
                 }
               ]
             }
