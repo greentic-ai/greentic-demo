@@ -94,7 +94,24 @@
   "default_operation": "present",
   "config_schema": {
     "type": "object",
-    "properties": {},
+    "properties": {
+      "operator_profile": {
+        "type": "object",
+        "description": "Optional operator-specific resolver and adapter data supplied by the bundle host.",
+        "properties": {
+          "resolver_catalog_json": {
+            "type": "string",
+            "description": "Serialized Telco-X resolver catalog JSON."
+          },
+          "adapter_fixtures_json": {
+            "type": "string",
+            "description": "Serialized Telco-X adapter fixture/source JSON."
+          }
+        },
+        "required": ["resolver_catalog_json", "adapter_fixtures_json"],
+        "additionalProperties": false
+      }
+    },
     "required": [],
     "additionalProperties": false
   },
