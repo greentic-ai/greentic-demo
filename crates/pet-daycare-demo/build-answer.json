@@ -112,6 +112,14 @@
     "locks": {}
   },
   "pack": null,
+  "pack_overlay": {
+    "external_components": [
+      {
+        "source": "external-components/petstore.component.wasm",
+        "target": "components/petstore.component.wasm"
+      }
+    ]
+  },
   "flow": {
     "schema_id": "greentic-flow.wizard.plan",
     "schema_version": "2.0.0",

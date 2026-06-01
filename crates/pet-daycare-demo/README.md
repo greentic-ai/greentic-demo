@@ -7,7 +7,7 @@ new pet registration, boarding, vaccinations.
 
 ## What's in the box
 
-```
+```text
 crates/pet-daycare-demo/
 ├── assets/
 │   ├── cards/              ← Adaptive Card templates with ${prefill_*}
@@ -20,13 +20,31 @@ crates/pet-daycare-demo/
 │   │   ├── boarding_card.json
 │   │   └── vaccinations_card.json
 │   └── intent-index.json   ← Fast2Flow IndexManifestV2 (7 intents)
+├── external-components/    ← MCP wasm generated from petstore openapi
+│   └── petstore.component.wasm
+├── openapi/
+│   └── petstore.yaml       ← source spec fed to greentic-mcp-gen
 └── src/lib.rs              ← stub
 ```
+
+## Rebuilding the petstore component
+
+```bash
+cd crates/pet-daycare-demo
+greentic-mcp-gen \
+  --spec $(pwd)/openapi/petstore.yaml \
+  --output-dir $(pwd)/external-components
+```
+
+Output: `external-components/petstore.component.wasm`. The
+`build-answer.json` references it via
+`pack_overlay.external_components` so `gtc wizard apply` bundles it
+into the pack at `components/petstore.component.wasm`.
 
 ## The seven intents
 
 | Intent flow | Card | Sample utterance |
-|---|---|---|
+| --- | --- | --- |
 | `intent-checkin` | `checkin_card` | "Check in Bella for today at 9am" |
 | `intent-checkout` | `checkout_card` | "Rex is going home now" |
 | `intent-attendance` | `attendance_card` | "Who's here today?" |
@@ -41,7 +59,7 @@ Every form card opts into the generic `${prefill_<kind>}` substitution
 the runtime emits from intent-extracted entities. Concretely:
 
 | Card field | Placeholder | Filled from |
-|---|---|---|
+| --- | --- | --- |
 | Date inputs | `${prefill_date_iso}` | `date` entity, ISO form (e.g. `2026-06-04`) |
 | Time inputs | `${prefill_time}` | `time` entity (e.g. `14:00`) |
 | Pet name | `${prefill_person}` | `person` entity (the chatter's named pet) |
