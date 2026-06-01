@@ -2784,7 +2784,7 @@ fn vm_rca_analysis_card(
     cluster: &str,
     symptom: &str,
     time_window: &str,
-    presentation: &Value,
+    _presentation: &Value,
     summary: &str,
 ) -> Value {
     let service_label = vm_service_label(service);
@@ -2825,7 +2825,7 @@ fn vm_rca_analysis_card(
             "Short-lived contention".to_string(),
         ],
     ];
-    let mut findings_container_items = vec![
+    let findings_container_items = vec![
         json!({ "type": "TextBlock", "text": "Findings", "weight": "Bolder" }),
         json!({
             "type": "TextBlock",
@@ -4567,35 +4567,6 @@ fn horizontal_bar_chart_svg(rows: &[(&str, f64)], color: &str, suffix: &str) -> 
 
 fn sparkline_block(title: &str, values: &[f64], labels: &[&str], unit: &str, color: &str) -> Value {
     chart_image_block(title, line_chart_svg(values, labels, color, unit), title)
-}
-
-fn ascii_sparkline(values: &[f64]) -> String {
-    if values.is_empty() {
-        return "no-data".to_string();
-    }
-    let min_value = values.iter().copied().fold(f64::INFINITY, f64::min);
-    let max_value = values.iter().copied().fold(f64::NEG_INFINITY, f64::max);
-    let steps = [".", ":", "-", "=", "+", "*", "#", "@"];
-    let span = (max_value - min_value).max(0.0001);
-
-    values
-        .iter()
-        .map(|value| {
-            let normalized = ((*value - min_value) / span).clamp(0.0, 1.0);
-            let index = (normalized * ((steps.len() - 1) as f64)).round() as usize;
-            steps[index]
-        })
-        .collect::<Vec<_>>()
-        .join("")
-}
-
-fn confidence_ratio(confidence: &str) -> f64 {
-    match confidence {
-        "High" => 0.87,
-        "Medium-high" => 0.72,
-        "Medium" => 0.58,
-        _ => 0.35,
-    }
 }
 
 fn render_value(value: &Value) -> String {
