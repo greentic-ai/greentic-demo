@@ -28,6 +28,8 @@ struct PresentInput {
     #[serde(default)]
     step: Option<String>,
     #[serde(default)]
+    config: Option<Value>,
+    #[serde(default)]
     metadata: Option<Value>,
     #[serde(default)]
     message: Option<Value>,
@@ -644,8 +646,24 @@ fn execute_present(input: &PresentInput) -> PresentOutput {
         };
     }
 
-    let resolvers = ResolverCatalog::from_fixture().expect("resolver fixture");
-    let fixtures = AdapterFixtures::from_fixture().expect("adapter fixture");
+    let (resolvers, fixtures) =
+        match load_operator_profile(input.config.as_ref(), input.metadata.as_ref(), &metadata) {
+            Ok(profile) => profile,
+            Err(err) => {
+                let card = fallback_card("Operator profile error", &err);
+                return PresentOutput {
+                    scenario: "operator-profile-error".to_string(),
+                    playbook_id: "tx.playbook.error".to_string(),
+                    summary: err.clone(),
+                    text: Some(err),
+                    provider_hint,
+                    messages: response_messages_from_card(&card, false, false),
+                    rendered_card: Some(card.clone()),
+                    adaptive_card: Some(card),
+                    presentation: json!({ "kind": "error", "source": "operator_profile" }),
+                };
+            }
+        };
 
     if route == "run:prefix-traffic-form" {
         let prefix = metadata_text(&metadata, "prefix")
@@ -1364,6 +1382,106 @@ fn merged_metadata(metadata: Option<&Value>, message: Option<&Value>) -> Value {
     }
 
     normalized_metadata_object(message)
+}
+
+fn load_operator_profile(
+    config: Option<&Value>,
+    raw_metadata: Option<&Value>,
+    metadata: &Value,
+) -> Result<(ResolverCatalog, AdapterFixtures), String> {
+    if let Some(profile) = operator_profile_value(config, raw_metadata, metadata) {
+        return load_operator_profile_from_value(profile);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    if let Some(profile) = load_operator_profile_from_env()? {
+        return Ok(profile);
+    }
+
+    let resolvers = ResolverCatalog::from_fixture()
+        .map_err(|err| format!("failed to load embedded resolver fixture: {err}"))?;
+    let fixtures = AdapterFixtures::from_fixture()
+        .map_err(|err| format!("failed to load embedded adapter fixture: {err}"))?;
+    Ok((resolvers, fixtures))
+}
+
+fn operator_profile_value<'a>(
+    config: Option<&'a Value>,
+    raw_metadata: Option<&'a Value>,
+    metadata: &'a Value,
+) -> Option<&'a Value> {
+    config
+        .and_then(|value| {
+            value
+                .get("operator_profile")
+                .or_else(|| value.get("telco_x_operator_profile"))
+        })
+        .or_else(|| {
+            raw_metadata.and_then(|value| {
+                value
+                    .get("operator_profile")
+                    .or_else(|| value.get("telco_x_operator_profile"))
+            })
+        })
+        .or_else(|| {
+            metadata
+                .get("operator_profile")
+                .or_else(|| metadata.get("telco_x_operator_profile"))
+        })
+}
+
+fn load_operator_profile_from_value(
+    profile: &Value,
+) -> Result<(ResolverCatalog, AdapterFixtures), String> {
+    let resolver_json = profile_text(profile, "resolver_catalog_json")
+        .or_else(|| profile_text(profile, "resolverCatalogJson"));
+    let adapter_json = profile_text(profile, "adapter_fixtures_json")
+        .or_else(|| profile_text(profile, "adapterFixturesJson"));
+
+    if let (Some(resolver_json), Some(adapter_json)) = (resolver_json, adapter_json) {
+        let resolvers = ResolverCatalog::from_json(resolver_json)
+            .map_err(|err| format!("failed to parse operator resolver catalog: {err}"))?;
+        let fixtures = AdapterFixtures::from_json(adapter_json)
+            .map_err(|err| format!("failed to parse operator adapter fixtures: {err}"))?;
+        return Ok((resolvers, fixtures));
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    {
+        let resolver_path = profile_text(profile, "resolver_catalog_path")
+            .or_else(|| profile_text(profile, "resolverCatalogPath"));
+        let adapter_path = profile_text(profile, "adapter_fixtures_path")
+            .or_else(|| profile_text(profile, "adapterFixturesPath"));
+        if let (Some(resolver_path), Some(adapter_path)) = (resolver_path, adapter_path) {
+            return Ok((
+                ResolverCatalog::from_json_file(resolver_path)?,
+                AdapterFixtures::from_json_file(adapter_path)?,
+            ));
+        }
+    }
+
+    Err("operator_profile must include resolver_catalog_json and adapter_fixtures_json".to_string())
+}
+
+fn profile_text<'a>(profile: &'a Value, key: &str) -> Option<&'a str> {
+    profile.get(key).and_then(Value::as_str)
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn load_operator_profile_from_env() -> Result<Option<(ResolverCatalog, AdapterFixtures)>, String> {
+    let resolver_path = std::env::var("TELCO_X_RESOLVER_CATALOG").ok();
+    let adapter_path = std::env::var("TELCO_X_ADAPTER_FIXTURES").ok();
+    match (resolver_path, adapter_path) {
+        (Some(resolver_path), Some(adapter_path)) => Ok(Some((
+            ResolverCatalog::from_json_file(resolver_path)?,
+            AdapterFixtures::from_json_file(adapter_path)?,
+        ))),
+        (None, None) => Ok(None),
+        _ => Err(
+            "TELCO_X_RESOLVER_CATALOG and TELCO_X_ADAPTER_FIXTURES must be set together"
+                .to_string(),
+        ),
+    }
 }
 
 fn metadata_lookup<'a>(metadata: &'a Value, key: &str) -> Option<&'a Value> {
@@ -4891,6 +5009,7 @@ mod tests {
         let input = PresentInput {
             query: Some("show overutilised aci ports".to_string()),
             step: None,
+            config: None,
             metadata: None,
             message: None,
             source_provider: Some("teams".to_string()),
@@ -4913,6 +5032,7 @@ mod tests {
         let input = PresentInput {
             query: Some("show recent change correlation".to_string()),
             step: None,
+            config: None,
             metadata: None,
             message: None,
             source_provider: None,
@@ -4927,6 +5047,7 @@ mod tests {
         let input = PresentInput {
             query: Some("run vm rca".to_string()),
             step: None,
+            config: None,
             metadata: None,
             message: None,
             source_provider: None,
@@ -4941,6 +5062,7 @@ mod tests {
         let input = PresentInput {
             query: Some(String::new()),
             step: None,
+            config: None,
             metadata: None,
             message: None,
             source_provider: Some("webchat".to_string()),
@@ -4977,6 +5099,7 @@ mod tests {
         let input = PresentInput {
             query: Some("investigate service degradation".to_string()),
             step: None,
+            config: None,
             metadata: None,
             message: None,
             source_provider: Some("webchat".to_string()),
@@ -4990,6 +5113,7 @@ mod tests {
     fn category_query_returns_capacity_menu() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("menu:capacity-port-management".to_string()),
             metadata: None,
             message: None,
@@ -5010,6 +5134,7 @@ mod tests {
         let input = PresentInput {
             query: Some("show prefix traffic".to_string()),
             step: None,
+            config: None,
             metadata: None,
             message: None,
             source_provider: None,
@@ -5029,10 +5154,64 @@ mod tests {
     }
 
     #[test]
+    fn external_operator_profile_overrides_embedded_fixtures() {
+        let resolver_json = telco_x::resolvers::FIXTURE_CATALOG_JSON.to_string();
+        let adapter_json = telco_x::adapters::FIXTURE_SOURCES_JSON
+            .replace("Peer AS64501", "External Peer AS65010");
+        let input = PresentInput {
+            query: Some("show prefix traffic".to_string()),
+            step: None,
+            config: Some(json!({
+                "operator_profile": {
+                    "resolver_catalog_json": resolver_json,
+                    "adapter_fixtures_json": adapter_json
+                }
+            })),
+            metadata: None,
+            message: None,
+            source_provider: None,
+        };
+
+        let output = execute_present(&input);
+
+        assert_eq!(output.scenario, "prefix-traffic");
+        assert!(
+            output
+                .messages
+                .to_string()
+                .contains("External Peer AS65010"),
+            "expected rendered messages to use external adapter fixture"
+        );
+    }
+
+    #[test]
+    fn invalid_external_operator_profile_returns_error_card() {
+        let input = PresentInput {
+            query: Some("show prefix traffic".to_string()),
+            step: None,
+            config: Some(json!({
+                "operator_profile": {
+                    "resolver_catalog_json": "{}"
+                }
+            })),
+            metadata: None,
+            message: None,
+            source_provider: None,
+        };
+
+        let output = execute_present(&input);
+
+        assert_eq!(output.scenario, "operator-profile-error");
+        assert_eq!(output.playbook_id, "tx.playbook.error");
+        assert!(output.summary.contains("operator_profile must include"));
+    }
+
+    #[test]
     fn service_assurance_query_selects_slo_status() {
         let input = PresentInput {
             query: Some("show slo status".to_string()),
             step: None,
+            config: None,
             metadata: None,
             message: None,
             source_provider: None,
@@ -5046,6 +5225,7 @@ mod tests {
     fn slo_status_button_opens_parameter_menu() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("menu:slo-status-parameters".to_string()),
             metadata: None,
             message: None,
@@ -5062,6 +5242,7 @@ mod tests {
     fn slo_status_form_uses_selected_metadata() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:slo-status-form".to_string()),
             metadata: Some(json!({
                 "service": "internet",
@@ -5095,6 +5276,7 @@ mod tests {
         let input = PresentInput {
             query: Some("show free aci ports".to_string()),
             step: None,
+            config: None,
             metadata: None,
             message: None,
             source_provider: None,
@@ -5108,6 +5290,7 @@ mod tests {
     fn bgp_button_opens_parameter_menu() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("menu:bgp-advertisers-parameters".to_string()),
             metadata: None,
             message: None,
@@ -5124,6 +5307,7 @@ mod tests {
     fn free_ports_button_opens_parameter_menu() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("menu:free-ports-parameters".to_string()),
             metadata: None,
             message: None,
@@ -5143,6 +5327,7 @@ mod tests {
     fn change_correlation_form_uses_selected_metadata() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:change-correlation-form".to_string()),
             metadata: Some(json!({
                 "service": "internet",
@@ -5165,6 +5350,7 @@ mod tests {
     fn overutilised_ports_button_opens_parameter_menu() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("menu:port-utilisation-parameters".to_string()),
             metadata: None,
             message: None,
@@ -5181,6 +5367,7 @@ mod tests {
     fn vm_rca_button_opens_parameter_menu() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("menu:vm-rca-parameters".to_string()),
             metadata: None,
             message: None,
@@ -5200,6 +5387,7 @@ mod tests {
     fn parameterized_port_run_uses_selected_threshold() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:port-utilisation:device=2201:threshold=90".to_string()),
             metadata: None,
             message: None,
@@ -5218,6 +5406,7 @@ mod tests {
     fn port_utilisation_form_uses_selected_metadata() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:port-utilisation-form".to_string()),
             metadata: Some(json!({
                 "device": "3101",
@@ -5254,6 +5443,7 @@ mod tests {
     fn parameterized_vm_rca_run_uses_selected_service() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:vm-rca:service=internet".to_string()),
             metadata: None,
             message: None,
@@ -5269,6 +5459,7 @@ mod tests {
     fn vm_rca_form_uses_selected_metadata() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:vm-rca-form".to_string()),
             metadata: Some(json!({
                 "service": "internet",
@@ -5306,6 +5497,7 @@ mod tests {
     fn prefix_traffic_button_opens_parameter_menu() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("menu:prefix-traffic-parameters".to_string()),
             metadata: None,
             message: None,
@@ -5325,6 +5517,7 @@ mod tests {
     fn prefix_traffic_form_uses_selected_metadata() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:prefix-traffic-form".to_string()),
             metadata: Some(json!({
                 "prefix": "10.24.0.0/16",
@@ -5353,6 +5546,7 @@ mod tests {
     fn prefix_traffic_form_applies_direction_and_time_window_to_output() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:prefix-traffic-form".to_string()),
             metadata: Some(json!({
                 "prefix": "10.24.0.0/16",
@@ -5384,6 +5578,7 @@ mod tests {
         let input = PresentInput {
             query: Some("run:prefix-traffic-form".to_string()),
             step: None,
+            config: None,
             metadata: Some(json!({
                 "channel": "813f3e1f-a723-4b99-b766-0d0d89203bb6",
                 "from": {
@@ -5461,6 +5656,7 @@ mod tests {
     fn bgp_findings_include_health_chart() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:bgp-advertisers-form".to_string()),
             metadata: Some(json!({
                 "prefix": "10.24.0.0/16",
@@ -5482,6 +5678,7 @@ mod tests {
     fn top_source_asn_findings_include_ranked_charts() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:top-source-asns-form".to_string()),
             metadata: Some(json!({
                 "prefix": "10.24.0.0/16",
@@ -5509,6 +5706,7 @@ mod tests {
     fn free_port_findings_include_capacity_chart() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:free-ports-form".to_string()),
             metadata: Some(json!({
                 "device": "2201",
@@ -5529,6 +5727,7 @@ mod tests {
     fn noisy_neighbour_findings_include_platform_pressure_chart() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:noisy-neighbour-form".to_string()),
             metadata: Some(json!({
                 "scope": "riyadh-core",
@@ -5549,6 +5748,7 @@ mod tests {
     fn scope_health_findings_include_utilisation_chart() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:scope-health-sweep-form".to_string()),
             metadata: Some(json!({
                 "scope": "riyadh-core",
@@ -5569,6 +5769,7 @@ mod tests {
     fn change_correlation_findings_include_event_distribution_chart() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:change-correlation-form".to_string()),
             metadata: Some(json!({
                 "service": "mobile-data",
@@ -5590,6 +5791,7 @@ mod tests {
     fn service_degradation_findings_include_composed_charts() {
         let input = PresentInput {
             query: Some(String::new()),
+            config: None,
             step: Some("run:service-degradation-form".to_string()),
             metadata: Some(json!({
                 "service": "mobile-data",

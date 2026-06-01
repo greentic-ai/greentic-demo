@@ -159,6 +159,13 @@ gtc start ./deep-research-demo-bundle --target aws
 
 Outcome:
 - Runs a Telco-X assistant in Webchat with category menus, multi-playbook telco flows, and adaptive-card results for traffic, capacity, RCA, and service-assurance scenarios.
+- Uses embedded Telco-X demo data by default. The presentation component can also receive an external operator profile (`resolver_catalog_json` + `adapter_fixtures_json`) so operator-specific data lives outside the generic Telco-X layer.
+
+Reference operator profile assets:
+- `https://github.com/greentic-biz/demo-operator-telco/releases/latest/download/resolver_catalog.json`
+- `https://github.com/greentic-biz/demo-operator-telco/releases/latest/download/adapter_fixtures.json`
+- `https://github.com/greentic-biz/demo-operator-telco/releases/latest/download/playbook_config.json`
+- `https://github.com/greentic-biz/demo-operator-telco/releases/latest/download/component_registry.yaml`
 
 Run:
 ```bash
@@ -166,3 +173,5 @@ gtc wizard --answers oci://ghcr.io/greenticai/answers/telco-x-demo/create:latest
 gtc setup --answers oci://ghcr.io/greenticai/answers/telco-x-demo/setup:latest ./telco-x-demo-bundle
 gtc start ./telco-x-demo-bundle
 ```
+
+Note: `demo-operator-telco` is currently private. For external users, mirror these assets to a public release or OCI location before publishing the demo instructions.

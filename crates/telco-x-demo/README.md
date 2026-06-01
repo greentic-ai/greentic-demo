@@ -32,3 +32,21 @@ Try:
 - `show recent change correlation`
 - `run vm rca`
 - `investigate service degradation`
+
+## External Operator Profile
+
+The demo bundle ships with embedded Telco-X data so it works out of the box. For operator-specific demonstrations, keep the generic Telco-X code unchanged and supply an external operator profile to the presentation component:
+
+- `operator_profile.resolver_catalog_json`: serialized Telco-X resolver catalog JSON
+- `operator_profile.adapter_fixtures_json`: serialized Telco-X adapter fixture/source JSON
+
+The reference demo operator profile is published here:
+
+```text
+https://github.com/greentic-biz/demo-operator-telco/releases/latest/download/resolver_catalog.json
+https://github.com/greentic-biz/demo-operator-telco/releases/latest/download/adapter_fixtures.json
+https://github.com/greentic-biz/demo-operator-telco/releases/latest/download/playbook_config.json
+https://github.com/greentic-biz/demo-operator-telco/releases/latest/download/component_registry.yaml
+```
+
+Because that repository is private, those links require GitHub access. For a public hand-off, publish the same files to a public release or OCI artifact and point the bundle setup at that location.
