@@ -1,0 +1,195 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.3",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Register a New Pet"
+    },
+    {
+      "type": "TextBlock",
+      "text": "First-time onboarding. Skip optional fields if you don't have them yet.",
+      "isSubtle": true,
+      "wrap": true
+    },
+    {
+      "type": "Container",
+      "style": "emphasis",
+      "items": [
+        {
+          "type": "TextBlock",
+          "weight": "Bolder",
+          "text": "Pet"
+        },
+        {
+          "type": "Input.Text",
+          "id": "pet_name",
+          "label": "Pet name",
+          "placeholder": "Cooper",
+          "value": "${prefill_person}",
+          "isRequired": true,
+          "errorMessage": "Pet name is required"
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "species",
+                  "label": "Species",
+                  "style": "compact",
+                  "value": "dog",
+                  "choices": [
+                    { "title": "Dog", "value": "dog" },
+                    { "title": "Cat", "value": "cat" },
+                    { "title": "Other", "value": "other" }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.Text",
+                  "id": "breed",
+                  "label": "Breed",
+                  "placeholder": "Golden Retriever"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.Date",
+                  "id": "date_of_birth",
+                  "label": "Date of birth"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.ChoiceSet",
+                  "id": "sex",
+                  "label": "Sex",
+                  "style": "compact",
+                  "value": "unknown",
+                  "choices": [
+                    { "title": "Male", "value": "male" },
+                    { "title": "Female", "value": "female" },
+                    { "title": "Unknown", "value": "unknown" }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Input.Toggle",
+          "id": "neutered",
+          "title": "Neutered / spayed",
+          "value": "false",
+          "valueOn": "true",
+          "valueOff": "false"
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "style": "emphasis",
+      "items": [
+        {
+          "type": "TextBlock",
+          "weight": "Bolder",
+          "text": "Owner"
+        },
+        {
+          "type": "Input.Text",
+          "id": "owner_name",
+          "label": "Owner name",
+          "placeholder": "Sarah Smith",
+          "isRequired": true,
+          "errorMessage": "Owner name is required"
+        },
+        {
+          "type": "Input.Text",
+          "id": "owner_phone",
+          "label": "Owner phone",
+          "placeholder": "+44 …",
+          "value": "${prefill_phone}",
+          "isRequired": true,
+          "errorMessage": "Phone is required"
+        },
+        {
+          "type": "Input.Text",
+          "id": "owner_email",
+          "label": "Owner email",
+          "placeholder": "owner@example.com",
+          "value": "${prefill_email}"
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "style": "emphasis",
+      "items": [
+        {
+          "type": "TextBlock",
+          "weight": "Bolder",
+          "text": "Care notes"
+        },
+        {
+          "type": "Input.Text",
+          "id": "allergies",
+          "label": "Allergies / diet",
+          "placeholder": "No chicken; grain-free kibble",
+          "isMultiline": true
+        },
+        {
+          "type": "Input.Text",
+          "id": "behavioural_notes",
+          "label": "Behavioural notes",
+          "placeholder": "Reactive to other large dogs; loves humans",
+          "isMultiline": true
+        },
+        {
+          "type": "Input.Text",
+          "id": "vet_clinic",
+          "label": "Vet clinic",
+          "placeholder": "Greentic Vets"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Register Pet",
+      "style": "positive",
+      "data": { "action_id": "register_submit" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Back",
+      "data": { "action_id": "back", "routeToCardId": "welcome_card" }
+    }
+  ]
+}

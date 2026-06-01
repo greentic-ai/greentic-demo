@@ -1,0 +1,119 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.3",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Vaccinations"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Check expiry, or update a vaccine date.",
+      "isSubtle": true,
+      "wrap": true
+    },
+    {
+      "type": "Input.Text",
+      "id": "pet_name",
+      "label": "Pet",
+      "placeholder": "Bella",
+      "value": "${prefill_person}",
+      "isRequired": true,
+      "errorMessage": "Pet name is required"
+    },
+    {
+      "type": "Container",
+      "style": "emphasis",
+      "items": [
+        {
+          "type": "TextBlock",
+          "weight": "Bolder",
+          "text": "Current status (sample)"
+        },
+        {
+          "type": "FactSet",
+          "facts": [
+            { "title": "DHPP", "value": "valid until 2027-03-14" },
+            { "title": "Rabies", "value": "valid until 2026-08-02" },
+            { "title": "Bordetella (kennel cough)", "value": "valid until 2026-06-09" },
+            { "title": "Leptospirosis", "value": "valid until 2027-01-22" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Container",
+      "style": "emphasis",
+      "items": [
+        {
+          "type": "TextBlock",
+          "weight": "Bolder",
+          "text": "Update a vaccine"
+        },
+        {
+          "type": "Input.ChoiceSet",
+          "id": "vaccine_type",
+          "label": "Vaccine",
+          "style": "compact",
+          "value": "dhpp",
+          "choices": [
+            { "title": "DHPP", "value": "dhpp" },
+            { "title": "Rabies", "value": "rabies" },
+            { "title": "Bordetella", "value": "bordetella" },
+            { "title": "Leptospirosis", "value": "leptospirosis" }
+          ]
+        },
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.Date",
+                  "id": "given_date",
+                  "label": "Date given",
+                  "value": "${prefill_date_iso}"
+                }
+              ]
+            },
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                {
+                  "type": "Input.Date",
+                  "id": "expires_date",
+                  "label": "Expires"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Input.Text",
+          "id": "vet_name",
+          "label": "Vet / clinic",
+          "placeholder": "Greentic Vets"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Save",
+      "style": "positive",
+      "data": { "action_id": "vaccinations_submit" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Back",
+      "data": { "action_id": "back", "routeToCardId": "welcome_card" }
+    }
+  ]
+}
