@@ -8,7 +8,7 @@
         "kind": "local",
         "path": "../components/petstore/petstore.component.wasm"
       },
-      "digest": "sha256:35228672ccdda1e55f7a91ca8ca528ca7c3e5e75fc249d1b9c0ac520418e7d45",
+      "digest": "sha256:bdb41bff4d8b1a96e1676d324c7c5e0dae06a1af3aec248b40aab9131c560fa3",
       "manifest": {
         "world": "greentic:component/component@0.6.0",
         "version": "0.1.0"

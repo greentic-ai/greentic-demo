@@ -47,7 +47,7 @@
     {
       "type": "Action.Submit",
       "title": "Today's Attendance",
-      "data": { "action_id": "attendance", "routeToCardId": "attendance_card" }
+      "data": { "action_id": "list_pets", "operation": "list_pets", "page": "0" }
     },
     {
       "type": "Action.Submit",
