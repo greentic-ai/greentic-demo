@@ -1,0 +1,64 @@
+# Local telemetry stack for any greentic-demo bundle.
+#
+#   docker compose --project-directory ./docker -f ./docker/docker-compose.yml up -d
+#   export TELEMETRY_EXPORT=otlp-grpc
+#   export OTLP_ENDPOINT=http://localhost:4317
+#   gtc start ./<any-demo>-bundle
+#
+# Endpoints:
+#   - OTLP gRPC   :4317  (collector receiver)
+#   - OTLP HTTP   :4318  (collector receiver)
+#   - Prometheus  :9090  (scrape UI)
+#   - Loki        :3100  (log ingest + query)
+#   - Grafana     :3000  (anonymous admin, prometheus + loki pre-wired)
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.114.0
+    container_name: greentic-demo-otelcol
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4317:4317"
+      - "4318:4318"
+      - "8889:8889"
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    container_name: greentic-demo-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=1h"
+    ports:
+      - "9090:9090"
+    depends_on:
+      - otel-collector
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.2.0
+    container_name: greentic-demo-loki
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    ports:
+      - "3100:3100"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:11.3.0
+    container_name: greentic-demo-grafana
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+      - GF_AUTH_DISABLE_LOGIN_FORM=true
+    volumes:
+      - ./grafana-datasources.yml:/etc/grafana/provisioning/datasources/datasources.yml:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
