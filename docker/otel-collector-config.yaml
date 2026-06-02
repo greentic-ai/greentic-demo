@@ -1,0 +1,46 @@
+# OpenTelemetry Collector config for local demo telemetry.
+#
+# Receives OTLP from greentic-runner (host-side spans/metrics/logs) and from
+# any wasm guest that has TELEMETRY_EXPORT wired through, then exports:
+#   - metrics → :8889 (Prometheus scrape target)
+#   - traces  → debug (stdout, verbose; tail with `docker logs greentic-demo-otelcol`)
+#   - logs    → debug (stdout, verbose; same)
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 1s
+    send_batch_size: 256
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:8889
+    namespace: greentic
+  otlphttp/loki:
+    endpoint: http://loki:3100/otlp
+  debug:
+    verbosity: detailed
+    sampling_initial: 5
+    sampling_thereafter: 50
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus, debug]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlphttp/loki, debug]
