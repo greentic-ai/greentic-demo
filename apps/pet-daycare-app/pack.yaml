@@ -1,0 +1,68 @@
+pack_id: greentic.pet-daycare.demo
+version: 0.1.0
+kind: application
+publisher: Greentic
+components:
+- id: ai.greentic.component-adaptive-card
+  version: 0.1.0
+  world: greentic:component/component@0.6.0
+  supports:
+  - messaging
+  profiles:
+    default: stateless
+    supported:
+    - stateless
+  capabilities:
+    wasi:
+      random: true
+      clocks: true
+    host: {}
+  wasm: components/adaptive-card/component_adaptive_card.wasm
+- id: petstore
+  version: 0.1.0
+  world: greentic:component/component@0.6.0
+  supports:
+  - messaging
+  profiles:
+    default: default
+    supported:
+    - default
+  capabilities:
+    wasi:
+      random: true
+      clocks: true
+    host:
+      http:
+        client: true
+        server: false
+  wasm: components/petstore/petstore.component.wasm
+dependencies: []
+flows:
+- id: default
+  file: flows/main.ygtc
+  tags:
+  - default
+  entrypoints:
+  - default
+- id: flow_
+  file: flows/flow_.ygtc
+  tags:
+  - internal
+  entrypoints:
+  - default
+- id: flow_list_pets
+  file: flows/flow_list_pets.ygtc
+  tags:
+  - internal
+  entrypoints:
+  - default
+assets:
+- path: assets/cards/welcome_card.json
+- path: assets/cards/checkin_card.json
+- path: assets/cards/checkout_card.json
+- path: assets/cards/attendance_card.json
+- path: assets/cards/note_card.json
+- path: assets/cards/register_pet_card.json
+- path: assets/cards/boarding_card.json
+- path: assets/cards/vaccinations_card.json
+- path: assets/intent-index.json

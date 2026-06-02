@@ -1,0 +1,89 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.3",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Today's Attendance"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Live pets pulled from the petstore API (status: available). Use Refresh to re-fetch; Prev/Next to page.",
+      "isSubtle": true,
+      "wrap": true
+    },
+    {
+      "type": "Input.Date",
+      "id": "attendance_date",
+      "label": "Date",
+      "value": "${prefill_date_iso}"
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "room_filter",
+      "label": "Room",
+      "style": "compact",
+      "value": "all",
+      "choices": [
+        { "title": "All rooms", "value": "all" },
+        { "title": "Small dogs / cats", "value": "small" },
+        { "title": "Medium dogs", "value": "medium" },
+        { "title": "Large dogs", "value": "large" },
+        { "title": "Quiet / seniors", "value": "quiet" }
+      ]
+    },
+    {
+      "type": "Container",
+      "style": "emphasis",
+      "$data": "${if(payload.result, payload.result, createArray())}",
+      "items": [
+        {
+          "type": "TextBlock",
+          "weight": "Bolder",
+          "text": "${if(name, name, 'Unnamed pet')}",
+          "wrap": true
+        },
+        {
+          "type": "TextBlock",
+          "isSubtle": true,
+          "spacing": "None",
+          "text": "id: ${id} · status: ${if(status, status, 'unknown')}${if(category, concat(' · ', category.name), '')}",
+          "wrap": true
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "spacing": "Small",
+      "isSubtle": true,
+      "wrap": true,
+      "text": "Page ${if(payload.request.page, payload.request.page, '0')} · ${if(payload.result, count(payload.result), 0)} pets shown"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Refresh",
+      "style": "positive",
+      "data": { "action_id": "list_pets", "operation": "list_pets", "page": "0" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Prev page",
+      "data": { "action_id": "list_pets_prev", "operation": "list_pets", "page": "prev" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Next page",
+      "data": { "action_id": "list_pets_next", "operation": "list_pets", "page": "next" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Back",
+      "data": { "action_id": "back", "routeToCardId": "welcome_card" }
+    }
+  ]
+}

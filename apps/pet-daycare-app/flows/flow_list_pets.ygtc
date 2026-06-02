@@ -1,0 +1,25 @@
+id: flow_list_pets
+type: messaging
+start: fetch_pets
+nodes:
+  fetch_pets:
+    component.exec:
+      component: petstore
+      operation: find_pets_by_status
+      input:
+        status: "available"
+    routing:
+      - to: render_attendance_card
+
+  render_attendance_card:
+    card:
+      input:
+        card_source: asset
+        card_spec:
+          asset_path: assets/cards/attendance_card.json
+        payload:
+          request: "{{in.input.metadata}}"
+          result: "{{node.fetch_pets.result.structured_content}}"
+        mode: renderAndValidate
+    routing:
+      - out: true

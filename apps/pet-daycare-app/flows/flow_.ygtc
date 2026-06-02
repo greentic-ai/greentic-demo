@@ -1,0 +1,16 @@
+id: flow_
+type: messaging
+start: render_welcome_card
+nodes:
+  render_welcome_card:
+    card:
+      input:
+        card_source: asset
+        card_spec:
+          asset_path: assets/cards/welcome_card.json
+        payload:
+          request: "{{in}}"
+          result: {}
+        mode: renderAndValidate
+    routing:
+      - out: true
