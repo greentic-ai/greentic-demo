@@ -155,6 +155,39 @@ gtc start ./deep-research-demo-bundle --target aws
 ```
 - The AWS setup answers still expect runtime deployment variables such as `PUBLIC_BASE_URL` and `REDIS_URL` to be supplied during setup or deploy.
 
+### pet-daycare-demo
+
+Outcome:
+- Runs a pet-daycare front-desk assistant with fast2flow free-text routing across 7 cards (check-in, check-out, attendance, notes, register, boarding, vaccinations) plus a live tool call into the Swagger petstore API (`find_pets_by_status`) wired through `flow.call`.
+
+Run (from the repo root, using the local pack at `apps/pet-daycare-app/` and the local wizard answers at `demos/pet-daycare-demo-create-answers.json`):
+```bash
+# 1. Stage the local pack source (with its prebuilt dist/pet-daycare-app.gtpack)
+#    at the path the answers doc references — packs/pet-daycare.pack — inside the
+#    bundle. gtc wizard only fetches remote (oci/https) refs; for local refs it
+#    expects the directory to already exist relative to the bundle root.
+mkdir -p pet-daycare-demo-bundle/packs
+cp -R apps/pet-daycare-app pet-daycare-demo-bundle/packs/pet-daycare.pack
+
+# 2. Run the bundle wizard against the local answers doc.
+gtc wizard --answers demos/pet-daycare-demo-create-answers.json
+
+# 3. Start. The fast2flow env vars open the gate and lower the confidence floor.
+GREENTIC_FAST2FLOW_INDEXES_PATH=/tmp/fast2flow-indexes \
+GREENTIC_FAST2FLOW_FORCE_ENABLE=1 \
+FAST2FLOW_MIN_CONFIDENCE=0.05 \
+gtc start ./pet-daycare-demo-bundle
+```
+
+Notes:
+
+- No separate `gtc setup` step: the wizard answers carry an empty `setup_answers`, so the bundle is fully assembled by `gtc wizard` alone.
+- The staged pack source must contain `dist/pet-daycare-app.gtpack` — the runtime resolves messaging routes to `<bundle>/packs/pet-daycare.pack/dist/pet-daycare-app.gtpack`. The committed copy in `apps/pet-daycare-app/dist/` already ships this artifact; if it is missing, rebuild it with `greentic-pack build --in apps/pet-daycare-app`.
+- `demos/pet-daycare-demo-create-answers.json` is the `wizard` section of `crates/pet-daycare-demo/build-answer.json`, kept separately so `gtc wizard` can parse it as an `AnswerDocument` (it expects `wizard_id` at the top level).
+- The three `FAST2FLOW_*` / `GREENTIC_FAST2FLOW_*` env vars open the fast2flow gate and lower the BM25 confidence threshold for the short utterances in `assets/intent-index.json` — see `apps/pet-daycare-app/README.md` for the full rationale.
+- Try the natural-language routing in the Webchat UI: "Check in Bella for today at 9am", "Who's here today?", "When does Luna's rabies expire?". Fast2flow dispatches to the matching card and prefills marker fields (`person`, `time`, `date`).
+- Click "Today's Attendance" (or "Refresh" on the attendance card) to trigger the live petstore API call via the `flow_list_pets` flow — the response is rendered into the bound `attendance_result_card`.
+
 ### telco-x-demo
 
 Outcome:
