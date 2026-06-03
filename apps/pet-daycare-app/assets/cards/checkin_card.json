@@ -1,0 +1,106 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.3",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Check In a Pet"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Drop-off details. Anything you typed already gets prefilled — edit before saving.",
+      "isSubtle": true,
+      "wrap": true
+    },
+    {
+      "type": "Input.Text",
+      "id": "pet_name",
+      "label": "Pet name",
+      "placeholder": "Bella",
+      "value": "${prefill_person}",
+      "isRequired": true,
+      "errorMessage": "Pet name is required"
+    },
+    {
+      "type": "Input.Text",
+      "id": "owner_name",
+      "label": "Owner / dropped off by",
+      "placeholder": "Sarah"
+    },
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "Input.Date",
+              "id": "checkin_date",
+              "label": "Date",
+              "isRequired": true,
+              "value": "${prefill_date_iso}",
+              "errorMessage": "Date is required"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "Input.Time",
+              "id": "checkin_time",
+              "label": "Arrival time",
+              "isRequired": true,
+              "value": "${prefill_time}",
+              "errorMessage": "Time is required"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Input.Time",
+      "id": "expected_pickup_time",
+      "label": "Expected pickup",
+      "placeholder": "18:00"
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "room",
+      "label": "Room / play group",
+      "style": "compact",
+      "value": "small",
+      "choices": [
+        { "title": "Small dogs / cats", "value": "small" },
+        { "title": "Medium dogs", "value": "medium" },
+        { "title": "Large dogs", "value": "large" },
+        { "title": "Quiet / seniors", "value": "quiet" }
+      ]
+    },
+    {
+      "type": "Input.Text",
+      "id": "owner_notes",
+      "label": "Notes from owner",
+      "placeholder": "Limped a bit this morning, has had breakfast",
+      "isMultiline": true
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Check In",
+      "style": "positive",
+      "data": { "action_id": "checkin_submit" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Back",
+      "data": { "action_id": "back", "routeToCardId": "welcome_card" }
+    }
+  ]
+}

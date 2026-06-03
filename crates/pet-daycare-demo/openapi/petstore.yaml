@@ -1,0 +1,18 @@
+openapi: "3.0.3"
+info:
+  title: "Petstore Macro Example"
+  version: "1.0.0"
+paths:
+  /pets:
+    get:
+      summary: "List pets"
+      operationId: "listPetsMacro"
+      responses:
+        "200":
+          description: "ok"
+          content:
+            application/json:
+              schema:
+                type: "array"
+                items:
+                  type: "string"

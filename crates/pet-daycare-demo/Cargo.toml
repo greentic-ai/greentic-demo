@@ -1,0 +1,9 @@
+[package]
+name = "pet-daycare-demo"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+description = "Greentic pet-daycare demo bundle showcasing Fast2Flow intent routing and prefill (check-in / check-out / attendance / notes / boarding / vaccinations)."
+
+[lib]
+path = "src/lib.rs"

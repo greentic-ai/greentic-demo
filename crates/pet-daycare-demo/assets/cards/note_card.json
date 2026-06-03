@@ -1,0 +1,75 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.3",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Daily Note"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Log a note about a pet's day — behaviour, meals, walks, mood, sleep.",
+      "isSubtle": true,
+      "wrap": true
+    },
+    {
+      "type": "Input.Text",
+      "id": "pet_name",
+      "label": "Pet",
+      "placeholder": "Bella",
+      "value": "${prefill_person}",
+      "isRequired": true,
+      "errorMessage": "Pet name is required"
+    },
+    {
+      "type": "Input.Date",
+      "id": "note_date",
+      "label": "Date",
+      "value": "${prefill_date_iso}",
+      "isRequired": true,
+      "errorMessage": "Date is required"
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "note_kind",
+      "label": "Kind",
+      "style": "compact",
+      "value": "general",
+      "choices": [
+        { "title": "General observation", "value": "general" },
+        { "title": "Meal", "value": "meal" },
+        { "title": "Walk / exercise", "value": "walk" },
+        { "title": "Behaviour", "value": "behaviour" },
+        { "title": "Mood / energy", "value": "mood" },
+        { "title": "Sleep / rest", "value": "sleep" },
+        { "title": "Medication given", "value": "medication" },
+        { "title": "Incident / concern", "value": "incident" }
+      ]
+    },
+    {
+      "type": "Input.Text",
+      "id": "note_body",
+      "label": "Note",
+      "placeholder": "Didn't finish lunch. Took a long nap after the morning walk.",
+      "isMultiline": true,
+      "isRequired": true,
+      "errorMessage": "Add the note text"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Save Note",
+      "style": "positive",
+      "data": { "action_id": "note_submit" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Back",
+      "data": { "action_id": "back", "routeToCardId": "welcome_card" }
+    }
+  ]
+}

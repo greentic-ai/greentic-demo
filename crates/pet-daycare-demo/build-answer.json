@@ -1,0 +1,329 @@
+{
+  "schema_id": "greentic-demo.build-answer",
+  "schema_version": "1.0.0",
+  "wizard": {
+    "wizard_id": "greentic-dev.wizard.launcher.main",
+    "schema_id": "greentic-dev.launcher.main",
+    "schema_version": "1.0.0",
+    "locale": "en-GB",
+    "answers": {
+      "selected_action": "bundle",
+      "delegate_answer_document": {
+        "wizard_id": "greentic-bundle.wizard.run",
+        "schema_id": "greentic-bundle.wizard.answers",
+        "schema_version": "1.0.0",
+        "locale": "en-GB",
+        "answers": {
+          "access_rules": [
+            {
+              "policy": "public",
+              "rule_path": "pet-daycare-pack",
+              "tenant": "default"
+            },
+            {
+              "policy": "public",
+              "rule_path": "pet-daycare-pack",
+              "tenant": "demo"
+            }
+          ],
+          "advanced_setup": false,
+          "app_pack_entries": [
+            {
+              "detected_kind": "local_dir",
+              "display_name": "Pet Daycare Demo Pack",
+              "mapping": {
+                "scope": "global"
+              },
+              "pack_id": "pet-daycare-pack",
+              "reference": "packs/pet-daycare.pack"
+            }
+          ],
+          "app_packs": [
+            "packs/pet-daycare.pack"
+          ],
+          "bundle_id": "pet-daycare-demo",
+          "bundle_name": "pet-daycare-demo",
+          "capabilities": [
+            "greentic.cap.bundle_assets.read.v1",
+            "greentic.cap.fast2flow.v1"
+          ],
+          "export_intent": false,
+          "extension_provider_entries": [
+            {
+              "detected_kind": "oci",
+              "display_name": "Greentic Messaging Webchat GUI (0.4.111)",
+              "provider_id": "greentic.messaging.webchat-gui.v0_4_111",
+              "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:0.4.111",
+              "version": "0.4.111"
+            },
+            {
+              "detected_kind": "oci",
+              "display_name": "Greentic State Memory (stable)",
+              "provider_id": "state-memory",
+              "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
+              "version": "stable"
+            }
+          ],
+          "extension_providers": [
+            "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:0.4.111",
+            "oci://ghcr.io/greenticai/packs/state/state-memory:stable"
+          ],
+          "mode": "create",
+          "output_dir": "./pet-daycare-demo-bundle",
+          "remote_catalogs": [],
+          "setup_answers": {},
+          "setup_execution_intent": false,
+          "setup_specs": {}
+        },
+        "locks": {
+          "cache_policy": "workspace-local",
+          "catalogs": [],
+          "execution": "execute",
+          "lock_file": "bundle.lock.json",
+          "requested_mode": "create",
+          "setup_state_files": [],
+          "workspace_root": "bundle.yaml"
+        }
+      }
+    }
+  },
+  "pack_create": {
+    "wizard_id": "greentic-pack.wizard.run",
+    "schema_id": "greentic-pack.wizard.answers",
+    "schema_version": "1.0.0",
+    "locale": "en-GB",
+    "answers": {
+      "create_pack_id": "greentic.pet-daycare.demo",
+      "create_pack_scaffold": true,
+      "dry_run": false,
+      "mode": "interactive",
+      "pack_dir": "./pet-daycare.pack",
+      "run_build": false,
+      "run_delegate_component": false,
+      "run_delegate_flow": false,
+      "run_doctor": false,
+      "selected_actions": [
+        "main.create_application_pack",
+        "create_application_pack.start",
+        "main.exit"
+      ],
+      "sign": false
+    },
+    "locks": {}
+  },
+  "pack": null,
+  "pack_overlay": {
+    "external_components": [
+      {
+        "source": "external-components/petstore.component.wasm",
+        "target": "components/petstore.component.wasm"
+      }
+    ]
+  },
+  "flow": {
+    "schema_id": "greentic-flow.wizard.plan",
+    "schema_version": "2.0.0",
+    "actions": [
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_welcome_card",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/welcome_card.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_checkin_card",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/checkin_card.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_checkout_card",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/checkout_card.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_attendance_card",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/attendance_card.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_note_card",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/note_card.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_register_pet_card",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/register_pet_card.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_boarding_card",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/boarding_card.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      },
+      {
+        "action": "add-step",
+        "flow": "flows/main.ygtc",
+        "step_id": "show_vaccinations_card",
+        "component": "oci://ghcr.io/greenticai/components/component-adaptive-card:stable",
+        "mode": "default",
+        "answers": {
+          "card_source": "asset",
+          "default_card_asset": "assets/cards/vaccinations_card.json",
+          "default_card_inline": {
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+              {
+                "type": "TextBlock",
+                "text": "{{i18n:adaptive_card.default.title}}"
+              }
+            ]
+          },
+          "default_card_remote": "",
+          "multilingual": true,
+          "language_mode": "custom",
+          "supported_locales": "en"
+        }
+      }
+    ]
+  }
+}

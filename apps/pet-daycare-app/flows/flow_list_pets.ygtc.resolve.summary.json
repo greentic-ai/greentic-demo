@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "flow": "flow_list_pets.ygtc",
+  "nodes": {
+    "fetch_pets": {
+      "component_id": "petstore",
+      "source": {
+        "kind": "local",
+        "path": "../components/petstore/petstore.component.wasm"
+      },
+      "digest": "sha256:bdb41bff4d8b1a96e1676d324c7c5e0dae06a1af3aec248b40aab9131c560fa3",
+      "manifest": {
+        "world": "greentic:component/component@0.6.0",
+        "version": "0.1.0"
+      }
+    },
+    "render_attendance_card": {
+      "component_id": "ai.greentic.component-adaptive-card",
+      "source": {
+        "kind": "local",
+        "path": "../components/adaptive-card/component_adaptive_card.wasm"
+      },
+      "digest": "sha256:092d799a88475e9c45e48e0d24b7cfd5873d0c2d96f8b6abdfc8275c27bff656",
+      "manifest": {
+        "world": "greentic:component/component@0.6.0",
+        "version": "0.1.0"
+      }
+    }
+  }
+}

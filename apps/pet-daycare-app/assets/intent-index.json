@@ -1,0 +1,121 @@
+{
+  "version": "v2",
+  "scope": "demo:default",
+  "generated_at_ms": 0,
+  "entries": [
+    {
+      "flow_id": "intent-checkin",
+      "pack_id": "greentic.pet-daycare.demo",
+      "target": "greentic.pet-daycare.demo/default/checkin_card",
+      "title": "Check in a pet for daycare",
+      "tags": ["check", "checkin", "check-in", "arrive", "arrived", "drop", "dropoff", "drop-off", "daycare"],
+      "utterances": [
+        "check in {{person}}",
+        "check in {{person}} at {{time}}",
+        "check in {{person}} for {{date}} at {{time}}",
+        "{{person}} is here",
+        "{{person}} just arrived",
+        "drop off {{person}}",
+        "{{person}} arriving at {{time}}"
+      ],
+      "node_ids": ["checkin_card"]
+    },
+    {
+      "flow_id": "intent-checkout",
+      "pack_id": "greentic.pet-daycare.demo",
+      "target": "greentic.pet-daycare.demo/default/checkout_card",
+      "title": "Check out a pet (pickup)",
+      "tags": ["checkout", "check-out", "pickup", "pick-up", "going", "leave", "leaving", "collected", "home"],
+      "utterances": [
+        "check out {{person}}",
+        "{{person}} is going home",
+        "{{person}} picked up at {{time}}",
+        "pickup {{person}}",
+        "{{person}} collected by",
+        "pickup at {{time}}"
+      ],
+      "node_ids": ["checkout_card"]
+    },
+    {
+      "flow_id": "intent-attendance",
+      "pack_id": "greentic.pet-daycare.demo",
+      "target": "greentic.pet-daycare.demo/default/attendance_card",
+      "title": "Show today's attendance",
+      "tags": ["attendance", "today", "who", "list", "roster", "in", "here", "current"],
+      "utterances": [
+        "who is here today",
+        "who's here",
+        "show today's pets",
+        "today's attendance",
+        "how many dogs are in",
+        "list pets in {{location}}",
+        "attendance on {{date}}"
+      ],
+      "node_ids": ["attendance_card"]
+    },
+    {
+      "flow_id": "intent-note",
+      "pack_id": "greentic.pet-daycare.demo",
+      "target": "greentic.pet-daycare.demo/default/note_card",
+      "title": "Add a daily note about a pet",
+      "tags": ["note", "log", "record", "observation", "behaviour", "behavior", "meal", "walk", "nap", "mood"],
+      "utterances": [
+        "add a note for {{person}}",
+        "log a note for {{person}}",
+        "{{person}} didn't eat lunch",
+        "note: {{person}} had two walks",
+        "record that {{person}} slept well",
+        "behaviour note for {{person}}"
+      ],
+      "node_ids": ["note_card"]
+    },
+    {
+      "flow_id": "intent-register",
+      "pack_id": "greentic.pet-daycare.demo",
+      "target": "greentic.pet-daycare.demo/default/register_pet_card",
+      "title": "Register a new pet",
+      "tags": ["register", "new", "add", "onboard", "sign", "signup", "first", "create"],
+      "utterances": [
+        "register a new pet",
+        "register a new dog called {{person}}",
+        "sign up {{person}}",
+        "new pet onboarding",
+        "add a new pet {{person}}",
+        "first time {{person}}"
+      ],
+      "node_ids": ["register_pet_card"]
+    },
+    {
+      "flow_id": "intent-boarding",
+      "pack_id": "greentic.pet-daycare.demo",
+      "target": "greentic.pet-daycare.demo/default/boarding_card",
+      "title": "Book boarding (overnight stay)",
+      "tags": ["boarding", "overnight", "stay", "weekend", "kennel", "book", "booking", "multi-day"],
+      "utterances": [
+        "book {{person}} for boarding",
+        "boarding {{date}} to {{date}}",
+        "overnight stay for {{person}}",
+        "book {{person}} for the weekend",
+        "boarding next {{date}}",
+        "{{person}} staying overnight"
+      ],
+      "node_ids": ["boarding_card"]
+    },
+    {
+      "flow_id": "intent-vaccinations",
+      "pack_id": "greentic.pet-daycare.demo",
+      "target": "greentic.pet-daycare.demo/default/vaccinations_card",
+      "title": "Check or update vaccinations",
+      "tags": ["vaccine", "vaccines", "vaccination", "vaccinations", "rabies", "dhpp", "bordetella", "kennel cough", "leptospirosis", "expire", "expiry"],
+      "utterances": [
+        "{{person}}'s vaccinations",
+        "vaccinations for {{person}}",
+        "when does {{person}}'s rabies expire",
+        "is {{person}}'s kennel cough still valid",
+        "update {{person}}'s rabies expiry",
+        "vaccine status for {{person}}"
+      ],
+      "node_ids": ["vaccinations_card"]
+    }
+  ]
+}
