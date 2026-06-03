@@ -158,31 +158,15 @@ gtc start ./deep-research-demo-bundle --target aws
 ### pet-daycare-demo
 
 Outcome:
-- Runs a pet-daycare front-desk assistant with fast2flow free-text routing across 7 cards (check-in, check-out, attendance, notes, register, boarding, vaccinations) plus a live tool call into the Swagger petstore API (`find_pets_by_status`) wired through `flow.call`.
+- Runs a pet-daycare front-desk assistant with fast2flow free-text routing across 7 cards plus a live tool call into the Swagger petstore API.
 
-Run (from the repo root, using the local pack at `apps/pet-daycare-app/` and the local wizard answers at `demos/pet-daycare-demo-create-answers.json`):
+Run:
 ```bash
-# 1. Stage the local pack source inside the bundle at the path the answers
-#    doc references (packs/pet-daycare.pack). gtc wizard only fetches remote
-#    refs; local refs must exist relative to the bundle root.
 mkdir -p pet-daycare-demo-bundle/packs
 cp -R apps/pet-daycare-app pet-daycare-demo-bundle/packs/pet-daycare.pack
-
-# 2. Run the bundle wizard against the local answers doc.
 gtc wizard --answers demos/pet-daycare-demo-create-answers.json
-
-# 3. Start. No env vars required — the pack opts into fast2flow via
-#    `greentic.cap.fast2flow.v1` in its `pack.yaml`, and the runtime
-#    materializes `assets/intent-index.json` straight from the .gtpack.
 gtc start ./pet-daycare-demo-bundle
 ```
-
-Notes:
-- The staged pack source must contain `dist/pet-daycare-app.gtpack` — the runtime resolves messaging routes to `<bundle>/packs/pet-daycare.pack/dist/pet-daycare-app.gtpack`. The committed copy in `apps/pet-daycare-app/dist/` already ships this artifact; rebuild with `greentic-pack build --in apps/pet-daycare-app` if needed.
-- `demos/pet-daycare-demo-create-answers.json` is the `wizard` section of `crates/pet-daycare-demo/build-answer.json`, separated so `gtc wizard` can parse it as an `AnswerDocument`.
-- Try the natural-language routing in the Webchat UI: "Check in Bella for today at 9am", "Who's here today?", "When does Luna's rabies expire?". Fast2flow dispatches to the matching card and prefills marker fields (`person`, `time`, `date`).
-- Click "Today's Attendance" (or "Refresh" on the attendance card) to trigger the live petstore API call via the `flow_list_pets` flow.
-- Optional tuning: set `FAST2FLOW_MIN_CONFIDENCE=0.05` if the default 0.5 BM25 threshold rejects the short utterances in this demo.
 
 ### telco-x-demo
 
