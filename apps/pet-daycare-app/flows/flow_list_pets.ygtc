@@ -16,7 +16,7 @@ nodes:
       input:
         card_source: asset
         card_spec:
-          asset_path: assets/cards/attendance_card.json
+          asset_path: assets/cards/attendance_result_card.json
         payload:
           request: "{{in.input.metadata}}"
           result: "{{node.fetch_pets.result.structured_content}}"

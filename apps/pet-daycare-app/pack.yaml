@@ -61,6 +61,7 @@ assets:
 - path: assets/cards/checkin_card.json
 - path: assets/cards/checkout_card.json
 - path: assets/cards/attendance_card.json
+- path: assets/cards/attendance_result_card.json
 - path: assets/cards/note_card.json
 - path: assets/cards/register_pet_card.json
 - path: assets/cards/boarding_card.json

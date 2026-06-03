@@ -12,34 +12,9 @@
     },
     {
       "type": "TextBlock",
-      "text": "Live pets from the petstore API (status: available). Showing the first 5.",
+      "text": "Click Refresh to load live attendance from the petstore API (status: available).",
       "isSubtle": true,
       "wrap": true
-    },
-    {
-      "type": "FactSet",
-      "facts": [
-        {
-          "title": "${result.0.name||(none)}",
-          "value": "id ${result.0.id||-} · ${result.0.status||-}"
-        },
-        {
-          "title": "${result.1.name||(none)}",
-          "value": "id ${result.1.id||-} · ${result.1.status||-}"
-        },
-        {
-          "title": "${result.2.name||(none)}",
-          "value": "id ${result.2.id||-} · ${result.2.status||-}"
-        },
-        {
-          "title": "${result.3.name||(none)}",
-          "value": "id ${result.3.id||-} · ${result.3.status||-}"
-        },
-        {
-          "title": "${result.4.name||(none)}",
-          "value": "id ${result.4.id||-} · ${result.4.status||-}"
-        }
-      ]
     }
   ],
   "actions": [
