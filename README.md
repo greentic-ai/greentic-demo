@@ -162,11 +162,12 @@ Outcome:
 
 Run:
 ```bash
-mkdir -p pet-daycare-demo-bundle/packs
-cp -R apps/pet-daycare-app pet-daycare-demo-bundle/packs/pet-daycare.pack
 gtc wizard --answers demos/pet-daycare-demo-create-answers.json
-gtc start ./pet-daycare-demo-bundle
+gtc setup  --answers demos/pet-daycare-demo-setup-answers.json ./pet-daycare-demo-bundle
+FAST2FLOW_MIN_CONFIDENCE=0.05 gtc start ./pet-daycare-demo-bundle
 ```
+
+`FAST2FLOW_MIN_CONFIDENCE=0.05` relaxes the default BM25 threshold (0.5) for the short utterances shipped in this demo's `assets/intent-index.json`.
 
 ### telco-x-demo
 

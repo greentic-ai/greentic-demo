@@ -26,17 +26,17 @@
         "advanced_setup": false,
         "app_pack_entries": [
           {
-            "detected_kind": "local_dir",
+            "detected_kind": "file",
             "display_name": "Pet Daycare Demo Pack",
             "mapping": {
               "scope": "global"
             },
             "pack_id": "pet-daycare-pack",
-            "reference": "packs/pet-daycare.pack"
+            "reference": "file://apps/pet-daycare-app/dist/pet-daycare-app.gtpack"
           }
         ],
         "app_packs": [
-          "packs/pet-daycare.pack"
+          "file://apps/pet-daycare-app/dist/pet-daycare-app.gtpack"
         ],
         "bundle_id": "pet-daycare-demo",
         "bundle_name": "pet-daycare-demo",
