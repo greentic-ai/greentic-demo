@@ -2,6 +2,9 @@ pack_id: greentic.pet-daycare.demo
 version: 0.1.0
 kind: application
 publisher: Greentic
+capabilities:
+- name: greentic.cap.fast2flow.v1
+  description: opts into fast2flow free-text routing
 components:
 - id: ai.greentic.component-adaptive-card
   version: 0.1.0
