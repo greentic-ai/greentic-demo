@@ -240,6 +240,21 @@ jobs:
       - name: Package demos
         run: scripts/package_demos.sh
 
+      # Stage prebuilt app-pack archives (apps/*/dist/*.gtpack) into demos/ so
+      # they are picked up by the publish loop alongside crate-built packs.
+      # package_demos.sh wipes demos/*.gtpack before regenerating, so this
+      # must run after it.
+      - name: Stage app-pack artefacts
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          staged=0
+          for pack in apps/*/dist/*.gtpack; do
+            cp -v "$pack" demos/
+            staged=$((staged + 1))
+          done
+          echo "Staged ${staged} app-pack artefact(s) into demos/."
+
       - name: Detect demo artifacts
         id: artifacts
         run: |

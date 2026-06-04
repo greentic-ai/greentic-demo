@@ -26,17 +26,17 @@
         "advanced_setup": false,
         "app_pack_entries": [
           {
-            "detected_kind": "oci",
+            "detected_kind": "file",
             "display_name": "Pet Daycare Demo Pack",
             "mapping": {
               "scope": "global"
             },
             "pack_id": "pet-daycare-pack",
-            "reference": "oci://ghcr.io/greenticai/packs/demos/pet-daycare-app:latest"
+            "reference": "file://apps/pet-daycare-app/dist/pet-daycare-app.gtpack"
           }
         ],
         "app_packs": [
-          "oci://ghcr.io/greenticai/packs/demos/pet-daycare-app:latest"
+          "file://apps/pet-daycare-app/dist/pet-daycare-app.gtpack"
         ],
         "bundle_id": "pet-daycare-demo",
         "bundle_name": "pet-daycare-demo",
