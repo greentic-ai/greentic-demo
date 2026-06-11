@@ -155,6 +155,20 @@ gtc start ./deep-research-demo-bundle --target aws
 ```
 - The AWS setup answers still expect runtime deployment variables such as `PUBLIC_BASE_URL` and `REDIS_URL` to be supplied during setup or deploy.
 
+### pet-daycare-demo
+
+Outcome:
+- Runs a pet-daycare front-desk assistant with fast2flow free-text routing across 7 cards plus a live tool call into the Swagger petstore API.
+
+Run:
+```bash
+gtc wizard --answers demos/pet-daycare-demo-create-answers.json
+gtc setup  --answers demos/pet-daycare-demo-setup-answers.json ./pet-daycare-demo-bundle
+FAST2FLOW_MIN_CONFIDENCE=0.05 gtc start ./pet-daycare-demo-bundle
+```
+
+`FAST2FLOW_MIN_CONFIDENCE=0.05` relaxes the default BM25 threshold (0.5) for the short utterances shipped in this demo's `assets/intent-index.json`.
+
 ### telco-x-demo
 
 Outcome:

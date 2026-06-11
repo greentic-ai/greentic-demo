@@ -1,0 +1,85 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.3",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Today's Attendance"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Pets currently checked in. Filter by room or status.",
+      "isSubtle": true,
+      "wrap": true
+    },
+    {
+      "type": "Input.Date",
+      "id": "attendance_date",
+      "label": "Date",
+      "value": "${prefill_date_iso}"
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "room_filter",
+      "label": "Room",
+      "style": "compact",
+      "value": "all",
+      "choices": [
+        { "title": "All rooms", "value": "all" },
+        { "title": "Small dogs / cats", "value": "small" },
+        { "title": "Medium dogs", "value": "medium" },
+        { "title": "Large dogs", "value": "large" },
+        { "title": "Quiet / seniors", "value": "quiet" }
+      ]
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "status_filter",
+      "label": "Status",
+      "style": "compact",
+      "value": "in",
+      "choices": [
+        { "title": "Currently in", "value": "in" },
+        { "title": "Already left", "value": "out" },
+        { "title": "Boarding (overnight)", "value": "boarding" },
+        { "title": "Everyone", "value": "all" }
+      ]
+    },
+    {
+      "type": "Container",
+      "style": "emphasis",
+      "items": [
+        {
+          "type": "TextBlock",
+          "weight": "Bolder",
+          "text": "Currently in (sample)"
+        },
+        {
+          "type": "FactSet",
+          "facts": [
+            { "title": "Bella", "value": "small · in since 09:12 · pickup 18:00" },
+            { "title": "Cooper", "value": "medium · in since 08:45 · pickup 17:30" },
+            { "title": "Luna", "value": "quiet · boarding until Sun" },
+            { "title": "Max", "value": "large · in since 10:05 · pickup 19:00" }
+          ]
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Refresh",
+      "style": "positive",
+      "data": { "action_id": "attendance_refresh" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Back",
+      "data": { "action_id": "back", "routeToCardId": "welcome_card" }
+    }
+  ]
+}

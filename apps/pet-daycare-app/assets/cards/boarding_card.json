@@ -1,0 +1,108 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.3",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Book Boarding (Overnight Stay)"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Multi-day stays. Prefill picks up the first date you mentioned; add the return date here.",
+      "isSubtle": true,
+      "wrap": true
+    },
+    {
+      "type": "Input.Text",
+      "id": "pet_name",
+      "label": "Pet",
+      "placeholder": "Bella",
+      "value": "${prefill_person}",
+      "isRequired": true,
+      "errorMessage": "Pet name is required"
+    },
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "Input.Date",
+              "id": "checkin_date",
+              "label": "Check-in date",
+              "value": "${prefill_date_iso}",
+              "isRequired": true,
+              "errorMessage": "Check-in date is required"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "Input.Date",
+              "id": "checkout_date",
+              "label": "Check-out date",
+              "isRequired": true,
+              "errorMessage": "Check-out date is required"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Input.ChoiceSet",
+      "id": "room_type",
+      "label": "Room type",
+      "style": "compact",
+      "value": "standard",
+      "choices": [
+        { "title": "Standard kennel", "value": "standard" },
+        { "title": "Premium suite", "value": "premium" },
+        { "title": "Cat condo", "value": "cat_condo" },
+        { "title": "Group room (sociable dogs)", "value": "group" }
+      ]
+    },
+    {
+      "type": "Input.Text",
+      "id": "feeding_plan",
+      "label": "Feeding plan",
+      "placeholder": "Twice daily, own kibble (in labelled bag)",
+      "isMultiline": true
+    },
+    {
+      "type": "Input.Text",
+      "id": "meds_plan",
+      "label": "Medications",
+      "placeholder": "1× joint supplement with breakfast",
+      "isMultiline": true
+    },
+    {
+      "type": "Input.Toggle",
+      "id": "deposit_paid",
+      "title": "Deposit collected",
+      "value": "false",
+      "valueOn": "true",
+      "valueOff": "false"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Book Stay",
+      "style": "positive",
+      "data": { "action_id": "boarding_submit" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Back",
+      "data": { "action_id": "back", "routeToCardId": "welcome_card" }
+    }
+  ]
+}

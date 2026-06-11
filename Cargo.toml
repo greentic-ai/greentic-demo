@@ -8,6 +8,7 @@ members = [
     "crates/helpdesk-itsm-demo",
     "crates/hr-onboarding-demo",
     "crates/incident-demo",
+    "crates/pet-daycare-demo",
     "crates/quickstart-demo",
     "crates/quickstart-event-demo",
     "crates/redbutton-demo",

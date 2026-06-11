@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Pre-commit hook: mirrors the fmt + clippy gates from .github/workflows/ci.yml
+# Plus a cargo-sort check so workspace Cargo.toml dependency lists stay
+# alphabetized (CI doesn't run this yet — the hook is the canonical gate).
+#
+# Install once per clone: `git config core.hooksPath .githooks`
+set -euo pipefail
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+if ! grep -qE '\.rs$|Cargo\.(toml|lock)$' <<<"$STAGED"; then
+  exit 0
+fi
+
+echo "→ cargo fmt --all -- --check"
+cargo fmt --all -- --check
+
+echo "→ cargo clippy --workspace --all-targets -- -D warnings"
+cargo clippy --workspace --all-targets -- -D warnings
+
+if grep -qE 'Cargo\.toml$' <<<"$STAGED"; then
+  if ! command -v cargo-sort >/dev/null 2>&1; then
+    echo "→ cargo-sort not found, installing (one-time)…"
+    cargo install cargo-sort --locked
+  fi
+  echo "→ cargo sort --workspace"
+  cargo sort --workspace >/dev/null
+  # Re-stage any Cargo.toml files cargo-sort rewrote so they land in this commit.
+  if ! git diff --quiet -- '*Cargo.toml'; then
+    git add $(git diff --name-only -- '*Cargo.toml')
+    echo "  re-staged sorted Cargo.toml files"
+  fi
+fi

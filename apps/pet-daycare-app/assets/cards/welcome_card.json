@@ -1,0 +1,73 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.3",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Pet Daycare Front Desk"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Pick an option below, or just type what you want.",
+      "wrap": true,
+      "isSubtle": true
+    },
+    {
+      "type": "Container",
+      "style": "emphasis",
+      "items": [
+        {
+          "type": "TextBlock",
+          "weight": "Bolder",
+          "text": "Try saying…"
+        },
+        {
+          "type": "TextBlock",
+          "text": "• \"Check in Bella for today at 9am\"\n• \"Who's here today?\"\n• \"Rex is going home now\"\n• \"Add a note for Max: didn't eat lunch\"\n• \"Register a new dog called Cooper\"\n• \"Book Bella for boarding next Friday to Sunday\"\n• \"When does Luna's rabies expire?\"",
+          "wrap": true
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Check In",
+      "style": "positive",
+      "data": { "action_id": "checkin", "routeToCardId": "checkin_card" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Check Out",
+      "data": { "action_id": "checkout", "routeToCardId": "checkout_card" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Today's Attendance",
+      "data": { "action_id": "list_pets", "operation": "list_pets", "page": "0" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Add Note",
+      "data": { "action_id": "note", "routeToCardId": "note_card" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "New Pet",
+      "data": { "action_id": "register", "routeToCardId": "register_pet_card" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Boarding",
+      "data": { "action_id": "boarding", "routeToCardId": "boarding_card" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Vaccinations",
+      "data": { "action_id": "vaccinations", "routeToCardId": "vaccinations_card" }
+    }
+  ]
+}

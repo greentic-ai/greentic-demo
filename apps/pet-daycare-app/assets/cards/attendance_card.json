@@ -1,0 +1,33 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Today's Attendance",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Click Refresh to load live attendance from the petstore API (status: available).",
+      "isSubtle": true,
+      "wrap": true
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Refresh",
+      "style": "positive",
+      "data": { "action_id": "list_pets", "operation": "list_pets", "page": "0" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Back",
+      "data": { "action_id": "back", "routeToCardId": "welcome_card" }
+    }
+  ]
+}

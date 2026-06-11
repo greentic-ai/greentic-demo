@@ -1,0 +1,95 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.3",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Check Out a Pet"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Pickup details.",
+      "isSubtle": true,
+      "wrap": true
+    },
+    {
+      "type": "Input.Text",
+      "id": "pet_name",
+      "label": "Pet name",
+      "placeholder": "Bella",
+      "value": "${prefill_person}",
+      "isRequired": true,
+      "errorMessage": "Pet name is required"
+    },
+    {
+      "type": "Input.Text",
+      "id": "collected_by",
+      "label": "Collected by",
+      "placeholder": "Owner or authorised pickup"
+    },
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "Input.Date",
+              "id": "checkout_date",
+              "label": "Date",
+              "isRequired": true,
+              "value": "${prefill_date_iso}",
+              "errorMessage": "Date is required"
+            }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            {
+              "type": "Input.Time",
+              "id": "checkout_time",
+              "label": "Departure time",
+              "isRequired": true,
+              "value": "${prefill_time}",
+              "errorMessage": "Time is required"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "Input.Text",
+      "id": "day_summary",
+      "label": "Day summary",
+      "placeholder": "Played well, two walks, ate full lunch.",
+      "isMultiline": true
+    },
+    {
+      "type": "Input.Toggle",
+      "id": "owner_authorised",
+      "title": "Pickup is on the authorised list",
+      "value": "false",
+      "valueOn": "true",
+      "valueOff": "false"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Check Out",
+      "style": "positive",
+      "data": { "action_id": "checkout_submit" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Back",
+      "data": { "action_id": "back", "routeToCardId": "welcome_card" }
+    }
+  ]
+}
