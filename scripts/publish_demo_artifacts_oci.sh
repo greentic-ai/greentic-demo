@@ -33,13 +33,33 @@ append_unique_tag() {
     publish_tags+=("$tag")
 }
 
+# Brand-new GHCR packages that haven't been linked to this repo with write
+# access yet surface as a permission denial on first push. That's an
+# operator/infra condition, not a content bug — and with `set -e` the first
+# such denial aborts the whole job, taking every later artifact down with it
+# (e.g. pet-daycare-demo, the fast2flow routing / telemetry / fallback e2e
+# showcase consumed by greentic-e2e). Treat write denials as a loud, non-fatal
+# skip so the rest of the demos still publish; any other failure stays fatal.
+SKIPPED_REFS=()
 publish_ref() {
     local ref="$1"
     local file="$2"
     local media_type="$3"
+    local out
 
-    oras push --disable-path-validation --artifact-type "$media_type" "$ref" "${file}:${media_type}"
-    echo "  -> ${ref}"
+    if out=$(oras push --disable-path-validation --artifact-type "$media_type" "$ref" "${file}:${media_type}" 2>&1); then
+        echo "  -> ${ref}"
+        return 0
+    fi
+    if grep -qiE 'permission_denied|denied:.*write_package|insufficient_scope|requested access to the resource is denied' <<<"$out"; then
+        echo "::warning::skipping ${ref}: GHCR write denied (package not yet writable by this workflow)" >&2
+        printf '%s\n' "$out" >&2
+        SKIPPED_REFS+=("$ref")
+        return 0
+    fi
+    echo "::error::failed to publish ${ref}" >&2
+    printf '%s\n' "$out" >&2
+    return 1
 }
 
 require_command oras
@@ -113,4 +133,12 @@ if [[ "$PUBLISH_BUNDLES" == "1" ]]; then
     done
 else
     echo "Skipping demo bundle publication; set PUBLISH_BUNDLES=1 to enable it."
+fi
+
+if [ ${#SKIPPED_REFS[@]} -gt 0 ]; then
+    echo "::warning::${#SKIPPED_REFS[@]} artifact ref(s) skipped due to GHCR write denial:"
+    for ref in "${SKIPPED_REFS[@]}"; do
+        echo "  - ${ref}"
+    done
+    echo "Grant the workflow write access to these GHCR packages to publish them."
 fi
