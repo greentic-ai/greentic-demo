@@ -97,6 +97,18 @@
       "media_type": "application/vnd.greentic.answers.setup.v1+json"
     },
     {
+      "demo": "pet-daycare-demo",
+      "file": "demos/pet-daycare-demo-create-answers.json",
+      "artifact": "create",
+      "media_type": "application/vnd.greentic.answers.create.v1+json"
+    },
+    {
+      "demo": "pet-daycare-demo",
+      "file": "demos/pet-daycare-demo-setup-answers.json",
+      "artifact": "setup",
+      "media_type": "application/vnd.greentic.answers.setup.v1+json"
+    },
+    {
       "demo": "quickstart",
       "file": "demos/quickstart-create-answers.json",
       "artifact": "create",
