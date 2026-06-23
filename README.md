@@ -180,3 +180,10 @@ gtc wizard --answers oci://ghcr.io/greenticai/answers/telco-x-demo/create:latest
 gtc setup --answers oci://ghcr.io/greenticai/answers/telco-x-demo/setup:latest ./telco-x-demo-bundle
 gtc start ./telco-x-demo-bundle
 ```
+
+## Troubleshooting
+
+- **External messages (Teams/Slack/WebEx/Telegram) never arrive locally** — a
+  quick tunnel may have failed to come up. Quick tunnels are a local-dev
+  convenience only; cloud/AWS uses `PUBLIC_BASE_URL` + `No tunnel`. See
+  [docs/local-tunnels.md](docs/local-tunnels.md).
