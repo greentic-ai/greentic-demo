@@ -1,0 +1,24 @@
+provider_id: github-review-pack
+version: 1
+title: GitHub Review Assistant — OAuth setup
+# These questions are derived from the MCP's OAuth declaration (setup_fields):
+# the bundle author supplies the GitHub OAuth App credentials at setup time.
+# The customer never sees these — they only do the sign-in dance at runtime.
+# `name` is the secret key the adapter/callback read (pack-scoped).
+questions:
+  - name: auth.oauth2.githubOAuth.client_id
+    title: GitHub OAuth Client ID
+    kind: string
+    required: true
+    help: "Client ID from your GitHub OAuth App (Settings → Developer settings → OAuth Apps)"
+    placeholder: "Iv1.xxxxxxxxxxxxxxxx"
+    docs_url: "https://github.com/settings/developers"
+    group: GitHub OAuth
+  - name: auth.oauth2.githubOAuth.client_secret
+    title: GitHub OAuth Client Secret
+    kind: string
+    required: true
+    secret: true
+    help: "Client Secret from the same GitHub OAuth App. Authorization callback URL: http://localhost:8080/oauth/callback/github"
+    docs_url: "https://github.com/settings/developers"
+    group: GitHub OAuth

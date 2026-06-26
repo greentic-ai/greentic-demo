@@ -1,0 +1,126 @@
+{
+  "schema_version": 1,
+  "flow": "main.ygtc",
+  "nodes": {
+    "gate": {
+      "component_id": "github_reports",
+      "source": {
+        "kind": "local",
+        "path": "../components/github_reports/github_reports.component.wasm"
+      },
+      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4",
+      "manifest": {
+        "world": "greentic:component/component@0.6.0",
+        "version": "0.1.0"
+      }
+    },
+    "repos": {
+      "component_id": "github_reports",
+      "source": {
+        "kind": "local",
+        "path": "../components/github_reports/github_reports.component.wasm"
+      },
+      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4",
+      "manifest": {
+        "world": "greentic:component/component@0.6.0",
+        "version": "0.1.0"
+      }
+    },
+    "prs": {
+      "component_id": "github_reports",
+      "source": {
+        "kind": "local",
+        "path": "../components/github_reports/github_reports.component.wasm"
+      },
+      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4",
+      "manifest": {
+        "world": "greentic:component/component@0.6.0",
+        "version": "0.1.0"
+      }
+    },
+    "ci": {
+      "component_id": "github_reports",
+      "source": {
+        "kind": "local",
+        "path": "../components/github_reports/github_reports.component.wasm"
+      },
+      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4",
+      "manifest": {
+        "world": "greentic:component/component@0.6.0",
+        "version": "0.1.0"
+      }
+    },
+    "releases": {
+      "component_id": "github_reports",
+      "source": {
+        "kind": "local",
+        "path": "../components/github_reports/github_reports.component.wasm"
+      },
+      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4",
+      "manifest": {
+        "world": "greentic:component/component@0.6.0",
+        "version": "0.1.0"
+      }
+    },
+    "org_card": {
+      "component_id": "ai.greentic.component-adaptive-card",
+      "source": {
+        "kind": "local",
+        "path": "../components/adaptive-card/component_adaptive_card.wasm"
+      },
+      "digest": "sha256:092d799a88475e9c45e48e0d24b7cfd5873d0c2d96f8b6abdfc8275c27bff656",
+      "manifest": {
+        "world": "greentic:component/component@0.6.0",
+        "version": "0.1.0"
+      }
+    },
+    "repo_card": {
+      "component_id": "ai.greentic.component-adaptive-card",
+      "source": {
+        "kind": "local",
+        "path": "../components/adaptive-card/component_adaptive_card.wasm"
+      },
+      "digest": "sha256:092d799a88475e9c45e48e0d24b7cfd5873d0c2d96f8b6abdfc8275c27bff656",
+      "manifest": {
+        "world": "greentic:component/component@0.6.0",
+        "version": "0.1.0"
+      }
+    },
+    "prs_card": {
+      "component_id": "ai.greentic.component-adaptive-card",
+      "source": {
+        "kind": "local",
+        "path": "../components/adaptive-card/component_adaptive_card.wasm"
+      },
+      "digest": "sha256:092d799a88475e9c45e48e0d24b7cfd5873d0c2d96f8b6abdfc8275c27bff656",
+      "manifest": {
+        "world": "greentic:component/component@0.6.0",
+        "version": "0.1.0"
+      }
+    },
+    "ci_card": {
+      "component_id": "ai.greentic.component-adaptive-card",
+      "source": {
+        "kind": "local",
+        "path": "../components/adaptive-card/component_adaptive_card.wasm"
+      },
+      "digest": "sha256:092d799a88475e9c45e48e0d24b7cfd5873d0c2d96f8b6abdfc8275c27bff656",
+      "manifest": {
+        "world": "greentic:component/component@0.6.0",
+        "version": "0.1.0"
+      }
+    },
+    "releases_card": {
+      "component_id": "ai.greentic.component-adaptive-card",
+      "source": {
+        "kind": "local",
+        "path": "../components/adaptive-card/component_adaptive_card.wasm"
+      },
+      "digest": "sha256:092d799a88475e9c45e48e0d24b7cfd5873d0c2d96f8b6abdfc8275c27bff656",
+      "manifest": {
+        "world": "greentic:component/component@0.6.0",
+        "version": "0.1.0"
+      }
+    }
+  }
+}

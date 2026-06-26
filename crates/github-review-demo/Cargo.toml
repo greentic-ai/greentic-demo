@@ -1,0 +1,9 @@
+[package]
+name = "github-review-demo"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+description = "Greentic GitHub OAuth bake-in demo: a GitHub Review Assistant whose MCP component self-gates on a missing token; the runtime's native OAuth engine (githubOAuth) handles the sign-in dance — no OIDC provider is bundled."
+
+[lib]
+path = "src/lib.rs"

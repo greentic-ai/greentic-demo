@@ -15,7 +15,7 @@ name = "deep-research-demo"
 version = "0.1.88"
 
 [[package]]
-name = "github-mcp-demo"
+name = "github-review-demo"
 version = "0.1.88"
 
 [[package]]

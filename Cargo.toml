@@ -3,7 +3,7 @@ members = [
     "crates/cards-demo",
     "crates/cloud-deploy-demo",
     "crates/deep-research-demo",
-    "crates/github-mcp-demo",
+    "crates/github-review-demo",
     "crates/greentic-ai-demo",
     "crates/helpdesk-itsm-demo",
     "crates/hr-onboarding-demo",

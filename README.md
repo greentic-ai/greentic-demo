@@ -181,6 +181,19 @@ gtc setup --answers oci://ghcr.io/greenticai/answers/telco-x-demo/setup:latest .
 gtc start ./telco-x-demo-bundle
 ```
 
+### github-review-demo
+
+Outcome:
+- OAuth bake-in demo: a GitHub Review Assistant that walks org → repo → open PRs / failed CI / releases, every step a real MCP call against the OAuth-aware `github_reports` component. On the first call with no token, the component self-gates and the runtime's **native OAuth engine** (PKCE + refresh) delivers a GitHub sign-in card — no OIDC provider is bundled. The card under test is the runtime-delivered sign-in card.
+- Author prerequisite: a GitHub OAuth App (Settings → Developer settings → OAuth Apps) with authorization callback URL `http://localhost:8080/oauth/callback/github`. Enter the `client_id` / `client_secret` once at setup (scopes `repo`, `read:org`); the customer only signs in.
+
+Run:
+```bash
+gtc wizard --answers oci://ghcr.io/greenticai/answers/github-review-demo/create:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/github-review-demo/setup:latest ./github-review-demo-bundle
+gtc start ./github-review-demo-bundle
+```
+
 ## Troubleshooting
 
 - **External messages (Teams/Slack/WebEx/Telegram) never arrive locally** — a
