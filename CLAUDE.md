@@ -9,7 +9,7 @@ greentic-demo is a Rust workspace that collects independent Greentic demo crates
 ## Build & Development Commands
 
 ```bash
-# Build workspace (uses stable toolchain pinned in rust-toolchain.toml)
+# Build workspace (pinned toolchain 1.95.0 via rust-toolchain.toml)
 cargo build --locked
 
 # Format
@@ -27,7 +27,7 @@ cargo test -p quickstart-demo
 # Local CI mirror (fmt + clippy + test + package demos)
 ci/local_check.sh
 
-# Package all demo bundles (requires greentic-bundle tool; skips gracefully if missing)
+# Package all demo packs + bundles (requires greentic-pack and gtc; skips gracefully if missing)
 scripts/package_demos.sh
 ```
 
@@ -59,7 +59,7 @@ crates/<demo-name>/          # Demo crates (workspace members)
       components/            # WASM component references (if any)
       assets/i18n/           # Locale JSON files
 apps/                        # Standalone app packs (not workspace crates)
-demos/                       # Output: packaged .gtbundle files
+demos/                       # Output: packaged .gtpack and .gtbundle files
 scripts/                     # Packaging scripts
 ci/                          # CI scripts
 ```
@@ -87,9 +87,10 @@ Each is a standalone Rust crate with `crate-type = ["cdylib", "rlib"]`, its own 
 
 ### Packaging & Publishing
 
-- `scripts/package_demos.sh` archives each crate's `bundle/` into `demos/<name>.gtbundle` (requires `greentic-bundle` CLI)
+- `scripts/package_demos.sh` is a two-stage pipeline: first builds `.gtpack` archives from crate sources via `greentic-pack` wizard, then composes `.gtbundle` SquashFS bundles from those packs via `gtc` wizard + `greentic-setup bundle build`. Both `greentic-pack` and `gtc` must be installed (the script skips gracefully if missing)
 - CI publishes WASM components to GHCR via ORAS as OCI artifacts
 - App packs and demo bundles are also published to GHCR on tagged releases
+- `demos/quickstart.gtpack` is the pre-built pack used by the new deployment model
 
 ## Adding a New Demo
 
@@ -105,7 +106,7 @@ GitHub Actions (`ci.yml`) runs `ci/local_check.sh` which executes:
 3. `cargo test --workspace`
 4. `scripts/package_demos.sh`
 
-The publish workflow (`publish.yml`) builds WASM components, publishes packs and bundles to GHCR, and attaches `.gtbundle` files to GitHub Releases on tags.
+The publish workflow (`publish.yml`) builds WASM components, publishes packs and bundles to GHCR, and attaches `.gtpack`/`.gtbundle` files to GitHub Releases on tags.
 
 ## Workspace Lints
 
