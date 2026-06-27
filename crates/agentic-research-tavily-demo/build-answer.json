@@ -71,6 +71,10 @@
       {
         "path": "assets/secret-requirements.json",
         "content": "[\n  {\n    \"key\": \"tavily/api_key\",\n    \"description\": \"Tavily web-search API key (https://tavily.com). Used by the agent's tavily_search / tavily_extract tools.\"\n  },\n  {\n    \"key\": \"llm/deepseek\",\n    \"description\": \"DeepSeek LLM API key for the agentic worker's reasoning loop.\"\n  }\n]"
+      },
+      {
+        "path": "assets/setup.yaml",
+        "content": "provider_id: agentic-research-tavily-demo\nversion: 1\ntitle: Agentic Research (Tavily) \u2014 credentials\ndescription: API keys for the agentic worker and its Tavily web-search tools.\nquestions:\n  - name: deepseek\n    title: DeepSeek API key\n    kind: string\n    required: true\n    secret: true\n    help: \"LLM API key for the agentic worker's reasoning loop (https://platform.deepseek.com).\"\n    group: LLM\n    docs_url: \"https://platform.deepseek.com\"\n    placeholder: \"sk-...\"\n  - name: api_key\n    title: Tavily API key\n    kind: string\n    required: true\n    secret: true\n    help: \"Web-search API key used by tavily_search / tavily_extract (https://tavily.com).\"\n    group: Tools\n    docs_url: \"https://tavily.com\"\n    placeholder: \"tvly-...\"\n"
       }
     ]
   }
