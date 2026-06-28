@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "crates/agentic-hubspot-crm-demo",
     "crates/agentic-research-tavily-demo",
     "crates/cards-demo",
     "crates/cloud-deploy-demo",
