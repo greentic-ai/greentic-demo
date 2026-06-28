@@ -62,12 +62,24 @@ extension's `auth_mode` support to be deployed in your runtime.
 
 ## How it works
 
-- `flows/on_message.ygtc` is a `messaging` flow with a single logic node,
-  `assistant`, of type `dw.agent`. Its `operation` (`hubspot_assistant`) selects
-  the embedded agent declared under `agents:` in `pack.yaml`.
+- `flows/on_message.ygtc` is a `messaging` flow whose `start` node, `assistant`,
+  is a `dw.agent`. Its `operation` (`hubspot_assistant`) selects the embedded
+  agent declared under `agents:` in `pack.yaml`.
 - The agent receives the user's message text as `user_text` and returns `reply`.
-- The builtin `emit.response` node (`send_reply`) routes that reply back to the
-  active webchat channel.
+  It replies in English by default, switching language only if the user writes in
+  another language.
+- The `assistant` node has three exits, checked in order:
+  1. **Confirmed create** — an Adaptive Card submit re-enters the flow with
+     `response.action == create_contact_submit`, routing straight to `do_create`.
+  2. **Create intent** — when the user asks to create a contact, the agent does
+     **not** write; it emits the `[[CREATE_CONTACT]]` marker, and `show_create_card`
+     sends an inline Adaptive Card form (first name, last name, email, phone,
+     company) for the user to review and confirm.
+  3. **Everything else** — a normal chat reply via `send_reply`.
+- On the card's submit, `do_create` hands the confirmed fields to the agent,
+  which calls `hubspot_contacts` (operation `create`) and reports the new record
+  id and HubSpot URL. The card is the confirmation step: nothing is written until
+  the user clicks **Create**.
 - The agent's tools (`hubspot_contacts`, `hubspot_deals`, `hubspot_companies`,
   `hubspot_tickets`, `hubspot_associate`) come from the `greentic.hubspot`
   design extension, pulled from `store.greentic.cloud` at run time. No `.wasm` is
@@ -77,8 +89,11 @@ extension's `auth_mode` support to be deployed in your runtime.
 
 | Node | Kind | Purpose |
 |------|------|---------|
-| `assistant` | `dw.agent` (Agentic Worker) | HubSpot CRM assistant agent |
-| `send_reply` | `emit.response` (builtin) | Sends the agent reply back to chat |
+| `assistant` | `dw.agent` (Agentic Worker) | HubSpot CRM assistant agent; branches on create-intent / card submit |
+| `show_create_card` | `emit.response` (builtin) | Sends the inline Adaptive Card create/confirm form |
+| `do_create` | `dw.agent` (Agentic Worker) | Creates the contact from the confirmed form fields |
+| `send_reply` | `emit.response` (builtin) | Sends a normal agent reply back to chat |
+| `send_create_reply` | `emit.response` (builtin) | Sends the create confirmation back to chat |
 
 ## Packaging
 
