@@ -11,6 +11,11 @@ LOCAL_PACK_INPUT_DIR="$TMP_ROOT/local-pack-inputs"
 DEMO_FILTER="${1:-}"
 # Max seconds per wizard/setup command before it is killed.
 WIZARD_TIMEOUT="${WIZARD_TIMEOUT:-180}"
+# Base URL used by `greentic-pack build` to resolve `store://` extension
+# dependencies (e.g. the agentic demos' tool extensions). Packs that declare
+# no store extensions ignore it; the default keeps demo rebuilds working
+# without each caller having to export it.
+export GREENTIC_STORE_URL="${GREENTIC_STORE_URL:-https://store.greentic.cloud}"
 
 if [ "$#" -gt 1 ]; then
     echo "Usage: $0 [demo-name]" >&2
