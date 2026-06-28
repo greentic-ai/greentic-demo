@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "extensions": [
+    {
+      "id": "greentic.tavily",
+      "role": "tool",
+      "source": { "kind": "store", "ref": "store://greentic.tavily@1.2.4-research", "allow_tags": true }
+    }
+  ]
+}

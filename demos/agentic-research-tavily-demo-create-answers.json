@@ -33,6 +33,15 @@
             },
             "pack_id": "agentic-research-tavily-demo",
             "reference": "https://github.com/greenticai/greentic-demo/releases/latest/download/agentic-research-tavily-demo.gtpack"
+          },
+          {
+            "detected_kind": "https",
+            "display_name": "Tavily Research Agent",
+            "mapping": {
+              "scope": "global"
+            },
+            "pack_id": "agentic-research-tavily-agent",
+            "reference": "https://github.com/greenticai/greentic-demo/releases/latest/download/agentic-research-tavily-agent.gtpack"
           }
         ],
         "app_packs": [

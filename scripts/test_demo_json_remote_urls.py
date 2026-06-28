@@ -30,7 +30,10 @@ def walk(value, path="root"):
 
 
 def test_demo_json_uses_remote_urls():
-    for file in Path("demos").rglob("*.json"):
+    # Only check wizard answer files (*-create-answers.json, *-setup-answers.json).
+    # Other JSON files in demos/ (demo-artifacts.json, *-secret-questions.json,
+    # *.local.json) use different schemas and intentionally contain local paths.
+    for file in Path("demos").rglob("*-answers.json"):
         data = json.loads(file.read_text())
         walk(data, str(file))
 
