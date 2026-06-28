@@ -27,12 +27,38 @@ variables when you run `gtc start`:
 |----------|---------|---------|
 | `GREENTIC_LLM_PROVIDER` | LLM provider the agent uses | `deepseek` |
 | `GREENTIC_LLM_API_KEY` | API key for that provider | `sk-...` |
-| `GREENTIC_SECRET_HUBSPOT_ACCESS_TOKEN` | HubSpot Private App token (`secret://hubspot/access_token`) | `pat-...` |
+| `GREENTIC_SECRET_HUBSPOT_ACCESS_TOKEN` | HubSpot Private App token (`secret://hubspot/access_token`) — Private App mode only | `pat-...` |
+| `GREENTIC_SECRET_HUBSPOT_AUTH_MODE` | Optional auth selector (`secret://hubspot/auth_mode`); `oauth` switches to broker-backed OAuth, anything else/unset = Private App | `oauth` |
 | `GREENTIC_AW_REDIS_URL` | Redis the Agentic Worker uses for session state | `redis://127.0.0.1:6379` |
 
 Start a local Redis first (for example `docker run -p 6379:6379 redis`). Create a
 HubSpot Private App token at <https://developers.hubspot.com/docs/api/private-apps>
 with CRM scopes for contacts, deals, companies, and tickets.
+
+## OAuth mode (alternative)
+
+The same demo can authenticate with **broker-backed OAuth** (auto-refreshed)
+instead of a static Private App token. The HubSpot extension picks the mode from
+`secret://hubspot/auth_mode`: set it to `oauth` and the agent's `hubspot_*` tools
+fetch their token from the platform OAuth broker — the **broker**, not the demo,
+refreshes it.
+
+One-time prerequisite: register the HubSpot OAuth provider with the broker and
+complete consent, following
+[`component-hubspot-ext/docs/oauth-setup.md`](https://github.com/greentic-biz/component-hubspot-ext/blob/research/docs/oauth-setup.md).
+Once the broker can mint a HubSpot token for your tenant, run the demo in OAuth
+mode — note there is no `GREENTIC_SECRET_HUBSPOT_ACCESS_TOKEN`:
+
+```bash
+GREENTIC_LLM_PROVIDER=deepseek \
+GREENTIC_LLM_API_KEY=sk-your-deepseek-key \
+GREENTIC_SECRET_HUBSPOT_AUTH_MODE=oauth \
+GREENTIC_AW_REDIS_URL=redis://127.0.0.1:6379 \
+gtc start agentic-hubspot-crm-demo-bundle
+```
+
+This requires the OAuth broker host import (design-extension host) and the
+extension's `auth_mode` support to be deployed in your runtime.
 
 ## How it works
 
