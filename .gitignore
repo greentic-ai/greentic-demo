@@ -13,6 +13,10 @@ tmp_supply_*_answers.json
 .DS_Store
 .greentic/
 /deep-research-demo-bundle
+/agentic-research-tavily-demo-bundle
+# Local answer files carry real credentials — never commit them.
+/demos/*-create-answers.local.json
+/demos/*-setup-answers.local.json
 
 # CI workflow artifacts (codex-security-fix, dependency-review, codex-semver-fix)
 all-dependabot-alerts.json
