@@ -30,3 +30,6 @@ SEMVER_FIX_REPORT.md
 
 # git worktrees (subagent-driven dev)
 .worktrees/
+
+# generated per-machine demo answer overrides
+demos/*.local.json
