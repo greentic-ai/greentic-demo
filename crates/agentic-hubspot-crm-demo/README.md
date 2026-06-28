@@ -66,8 +66,8 @@ extension's `auth_mode` support to be deployed in your runtime.
   is a `dw.agent`. Its `operation` (`hubspot_assistant`) selects the embedded
   agent declared under `agents:` in `pack.yaml`.
 - The agent receives the user's message text as `user_text` and returns `reply`.
-  It replies in English by default, switching language only if the user writes in
-  another language.
+  It always replies in English (every reply, including greetings), regardless of
+  the language the user writes in.
 - The `assistant` node has three exits, checked in order:
   1. **Confirmed create** — an Adaptive Card submit re-enters the flow with
      `response.action == create_contact_submit`, routing straight to `do_create`.
