@@ -1,0 +1,35 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.6",
+  "speak": "Welcome to the Agentic Research Assistant. Ask any question and I will research the live web and answer with sources.",
+  "body": [
+    {
+      "type": "TextBlock",
+      "text": "Agentic Research Assistant",
+      "weight": "Bolder",
+      "size": "ExtraLarge",
+      "color": "Accent",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Ask me anything. I research the live web with Tavily and answer concisely, with source links.",
+      "wrap": true,
+      "isSubtle": true,
+      "spacing": "Small"
+    },
+    {
+      "type": "TextBlock",
+      "text": "Try asking:",
+      "weight": "Bolder",
+      "spacing": "Medium",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "- What's new in AI this week?\n- What is the latest price of Bitcoin?\n- Who won the most recent Formula 1 race?",
+      "wrap": true
+    }
+  ]
+}
