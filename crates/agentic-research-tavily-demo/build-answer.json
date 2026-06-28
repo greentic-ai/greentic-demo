@@ -1,0 +1,85 @@
+{
+  "schema_id": "greentic-demo.build-answer",
+  "schema_version": "1.0.0",
+  "wizard": null,
+  "pack_create": {
+    "wizard_id": "greentic-pack.wizard.run",
+    "schema_id": "greentic-pack.wizard.answers",
+    "schema_version": "1.0.0",
+    "locale": "en-GB",
+    "answers": {
+      "create_pack_id": "agentic-research-tavily-demo",
+      "create_pack_scaffold": true,
+      "dry_run": false,
+      "flow_wizard_answers": {
+        "schema_id": "greentic-flow.wizard.plan",
+        "schema_version": "2.0.0",
+        "actions": [
+          {
+            "action": "edit-flow-summary",
+            "flow": "flows/on_message.ygtc",
+            "name": "Agentic Worker Demo - Message Handler",
+            "description": "Route each incoming chat message to an Agentic Worker (dw.agent) and reply with its answer"
+          }
+        ]
+      },
+      "mode": "interactive",
+      "pack_dir": "./agentic-research-tavily-demo.pack",
+      "run_build": false,
+      "run_delegate_component": false,
+      "run_delegate_flow": false,
+      "run_doctor": false,
+      "sign": false
+    },
+    "locks": {}
+  },
+  "pack": {
+    "wizard_id": "greentic-pack.wizard.run",
+    "schema_id": "greentic-pack.wizard.answers",
+    "schema_version": "1.0.0",
+    "locale": "en-GB",
+    "answers": {
+      "dry_run": false,
+      "mode": "interactive",
+      "pack_dir": ".",
+      "run_build": false,
+      "run_delegate_component": false,
+      "run_delegate_flow": false,
+      "run_doctor": false,
+      "selected_actions": [
+        "main.update_application_pack",
+        "update_application_pack.run_update_validate",
+        "pipeline.update_validate",
+        "pipeline.sign_prompt.skip",
+        "main.exit"
+      ],
+      "sign": false
+    },
+    "locks": {}
+  },
+  "flow": null,
+  "pack_overlay": {
+    "files": [
+      {
+        "path": "pack.yaml",
+        "content": "pack_id: agentic-research-tavily-demo\nversion: 0.1.0\nkind: application\npublisher: Greentic\ncomponents:\n- id: ai.greentic.component-adaptive-card\n  version: 0.1.0\n  world: greentic:component/component@0.6.0\n  supports:\n  - messaging\n  profiles:\n    default: stateless\n    supported:\n    - stateless\n  capabilities:\n    wasi:\n      random: true\n      clocks: true\n    host: {}\n  wasm: components/adaptive-card/component_adaptive_card.wasm\ndependencies: []\nflows:\n- id: on_message\n  file: flows/on_message.ygtc\n  tags:\n  - default\n  entrypoints:\n  - default\nagents:\n  demo_assistant:\n    agent_id: demo_assistant\n    system_prompt: \"You are a web research assistant running as an Agentic Worker inside a Greentic flow. When the user asks about facts, recent events, prices, people, products, or anything you are not certain of, call the tavily_search tool to find current information online, then answer concisely in the user's language and cite the source URLs as markdown links. Use tavily_extract for the full content of a specific URL. Do not fabricate facts or sources.\"\n    tools:\n      - extension_id: greentic.tavily\n        tool_name: tavily_search\n      - extension_id: greentic.tavily\n        tool_name: tavily_extract\n    guardrails: []\n    llm:\n      provider: deepseek\n      model: deepseek-chat\n      credential_ref: deepseek\n    limits:\n      max_iter: 6\n      timeout: 120\n"
+      },
+      {
+        "path": "flows/on_message.ygtc",
+        "content": "id: default\ntitle: Agentic Worker Demo - Message Handler\ndescription: Research each message with an Agentic Worker (dw.agent); greet with a card, answer with a card\ntype: messaging\nstart: assistant\n\nnodes:\n  # The Agentic Worker runs first. Its routing branches on the user message:\n  # a greeting/empty message shows the welcome card; anything else renders the\n  # research answer as a card. (State-flag branching is not supported by the\n  # pack build, so we branch on message content instead.)\n  assistant:\n    dw.agent:\n      user_text: \"{{in.input.text}}\"\n    operation: demo_assistant\n    routing:\n      # The runtime condition evaluator (greentic-runner engine.rs\n      # evaluate_simple_condition) takes a RAW single-operator expression:\n      # no {{ }}, no or/and, no filters. OR is expressed as multiple\n      # first-match routes. == is case-insensitive. autoStart is the welcome\n      # trigger the webchat provider fires on conversation open (empty text,\n      # metadata.autoStart=true, surfaced as response.autoStart).\n      - condition: 'response.autoStart == \"true\"'\n        to: send_welcome\n      - condition: 'in.input.text == \"hi\"'\n        to: send_welcome\n      - condition: 'in.input.text == \"halo\"'\n        to: send_welcome\n      - condition: 'in.input.text == \"hai\"'\n        to: send_welcome\n      - condition: 'in.input.text == \"hello\"'\n        to: send_welcome\n      - condition: 'in.input.text == \"hey\"'\n        to: send_welcome\n      - condition: 'in.input.text == \"hallo\"'\n        to: send_welcome\n      - condition: 'in.input.text == \"hola\"'\n        to: send_welcome\n      - condition: 'in.input.text == \"start\"'\n        to: send_welcome\n      - condition: 'in.input.text == \"help\"'\n        to: send_welcome\n      - condition: 'in.input.text == \"menu\"'\n        to: send_welcome\n      - to: render_answer\n\n  send_welcome:\n    card:\n      input:\n        card_source: asset\n        card_spec:\n          asset_path: assets/cards/welcome.json\n        mode: renderAndValidate\n    routing:\n      - out: true\n\n  render_answer:\n    card:\n      input:\n        card_source: asset\n        card_spec:\n          asset_path: assets/cards/research_answer.json\n        payload:\n          answer: \"{{node.assistant.reply}}\"\n        mode: renderAndValidate\n    routing:\n      - out: true\n"
+      },
+      {
+        "path": "pack.extensions.json",
+        "content": "{\n  \"version\": 1,\n  \"extensions\": [\n    {\n      \"id\": \"greentic.tavily\",\n      \"role\": \"tool\",\n      \"source\": { \"kind\": \"store\", \"ref\": \"store://greentic.tavily@1.2.4-research\", \"allow_tags\": true }\n    }\n  ]\n}"
+      },
+      {
+        "path": "flows/on_message.ygtc.resolve.json",
+        "content": "{\n  \"schema_version\": 1,\n  \"flow\": \"flows/on_message.ygtc\",\n  \"nodes\": {\n    \"send_welcome\": { \"source\": { \"kind\": \"local\", \"path\": \"../components/adaptive-card/component_adaptive_card.wasm\" }, \"digest\": \"sha256:092d799a88475e9c45e48e0d24b7cfd5873d0c2d96f8b6abdfc8275c27bff656\" },\n    \"render_answer\": { \"source\": { \"kind\": \"local\", \"path\": \"../components/adaptive-card/component_adaptive_card.wasm\" }, \"digest\": \"sha256:092d799a88475e9c45e48e0d24b7cfd5873d0c2d96f8b6abdfc8275c27bff656\" }\n  }\n}"
+      },
+      {
+        "path": "flows/on_message.ygtc.resolve.summary.json",
+        "content": "{\n  \"schema_version\": 1,\n  \"flow\": \"on_message.ygtc\",\n  \"nodes\": {\n    \"send_welcome\": { \"component_id\": \"ai.greentic.component-adaptive-card\", \"source\": { \"kind\": \"local\", \"path\": \"../components/adaptive-card/component_adaptive_card.wasm\" }, \"digest\": \"sha256:092d799a88475e9c45e48e0d24b7cfd5873d0c2d96f8b6abdfc8275c27bff656\", \"manifest\": { \"world\": \"greentic:component/component@0.6.0\", \"version\": \"0.2.0\" } },\n    \"render_answer\": { \"component_id\": \"ai.greentic.component-adaptive-card\", \"source\": { \"kind\": \"local\", \"path\": \"../components/adaptive-card/component_adaptive_card.wasm\" }, \"digest\": \"sha256:092d799a88475e9c45e48e0d24b7cfd5873d0c2d96f8b6abdfc8275c27bff656\", \"manifest\": { \"world\": \"greentic:component/component@0.6.0\", \"version\": \"0.2.0\" } }\n}\n}"
+      }
+    ]
+  }
+}

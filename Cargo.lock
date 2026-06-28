@@ -3,6 +3,10 @@
 version = 4
 
 [[package]]
+name = "agentic-research-tavily-demo"
+version = "0.1.88"
+
+[[package]]
 name = "cards-demo"
 version = "0.1.88"
 
