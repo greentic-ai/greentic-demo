@@ -35,6 +35,23 @@ Start a local Redis first (for example `docker run -p 6379:6379 redis`). Create 
 HubSpot Private App token at <https://developers.hubspot.com/docs/api/private-apps>
 with CRM scopes for contacts, deals, companies, and tickets.
 
+## Connection method (in setup)
+
+When you run `gtc setup`, the HubSpot credentials form asks **how the tools
+authenticate** with a *Connection method* picker:
+
+- **Private App token** (default) — paste a HubSpot Private App token; the field
+  appears only for this choice. This is the mode that works today.
+- **OAuth** — uses the platform OAuth broker (auto-refreshed tokens). Choosing it
+  reveals a *When to connect HubSpot* option (*During setup* vs *In chat*). The
+  live in-setup **Connect HubSpot** button is coming in a platform update; until
+  then OAuth requires the broker to be provisioned first (see the OAuth section
+  below), so for a runnable demo keep **Private App token**.
+
+The picker only drives the setup form; it does not by itself switch the runtime
+into OAuth mode. The runtime mode is selected by `secret://hubspot/auth_mode`
+(see below).
+
 ## OAuth mode (alternative)
 
 The same demo can authenticate with **broker-backed OAuth** (auto-refreshed)
