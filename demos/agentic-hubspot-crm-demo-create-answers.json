@@ -14,44 +14,50 @@
         "access_rules": [
           {
             "policy": "public",
-            "rule_path": "pet-daycare-pack",
+            "rule_path": "agentic-hubspot-crm-demo",
             "tenant": "default"
           },
           {
             "policy": "public",
-            "rule_path": "pet-daycare-pack",
+            "rule_path": "agentic-hubspot-crm-demo",
             "tenant": "demo"
           }
         ],
         "advanced_setup": false,
         "app_pack_entries": [
           {
-            "detected_kind": "oci",
-            "display_name": "Pet Daycare Demo Pack",
+            "detected_kind": "https",
+            "display_name": "HubSpot CRM Assistant Demo Pack",
             "mapping": {
               "scope": "global"
             },
-            "pack_id": "pet-daycare-pack",
-            "reference": "oci://ghcr.io/greenticai/packs/demos/pet-daycare-app:latest"
+            "pack_id": "agentic-hubspot-crm-demo",
+            "reference": "https://github.com/greenticai/greentic-demo/releases/latest/download/agentic-hubspot-crm-demo.gtpack"
           }
         ],
         "app_packs": [
-          "oci://ghcr.io/greenticai/packs/demos/pet-daycare-app:latest"
+          "https://github.com/greenticai/greentic-demo/releases/latest/download/agentic-hubspot-crm-demo.gtpack"
         ],
-        "bundle_id": "pet-daycare-demo",
-        "bundle_name": "pet-daycare-demo",
+        "bundle_id": "agentic-hubspot-crm-demo-bundle",
+        "bundle_name": "agentic-hubspot-crm-demo-bundle",
         "capabilities": [
-          "greentic.cap.bundle_assets.read.v1",
-          "greentic.cap.fast2flow.v1"
+          "greentic.cap.bundle_assets.read.v1"
         ],
         "export_intent": false,
         "extension_provider_entries": [
           {
             "detected_kind": "oci",
-            "display_name": "Greentic Messaging Webchat GUI (latest)",
-            "provider_id": "greentic.messaging.webchat-gui.latest",
+            "display_name": "Greentic Messaging Webchat GUI (stable)",
+            "provider_id": "greentic.messaging.webchat-gui.stable",
             "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
-            "version": "latest"
+            "version": "stable"
+          },
+          {
+            "detected_kind": "oci",
+            "display_name": "Greentic Messaging Webchat (stable)",
+            "provider_id": "greentic.messaging.webchat.stable",
+            "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:stable",
+            "version": "stable"
           },
           {
             "detected_kind": "oci",
@@ -63,10 +69,11 @@
         ],
         "extension_providers": [
           "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
+          "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:stable",
           "oci://ghcr.io/greenticai/packs/state/state-memory:stable"
         ],
         "mode": "create",
-        "output_dir": "pet-daycare-demo-bundle",
+        "output_dir": "agentic-hubspot-crm-demo-bundle",
         "remote_catalogs": [],
         "setup_answers": {},
         "setup_execution_intent": false,
@@ -82,5 +89,6 @@
         "workspace_root": "bundle.yaml"
       }
     }
-  }
+  },
+  "locks": {}
 }

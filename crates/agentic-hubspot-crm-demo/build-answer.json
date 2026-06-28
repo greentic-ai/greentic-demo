@@ -1,0 +1,81 @@
+{
+  "schema_id": "greentic-demo.build-answer",
+  "schema_version": "1.0.0",
+  "wizard": null,
+  "pack_create": {
+    "wizard_id": "greentic-pack.wizard.run",
+    "schema_id": "greentic-pack.wizard.answers",
+    "schema_version": "1.0.0",
+    "locale": "en-GB",
+    "answers": {
+      "create_pack_id": "agentic-hubspot-crm-demo",
+      "create_pack_scaffold": true,
+      "dry_run": false,
+      "flow_wizard_answers": {
+        "schema_id": "greentic-flow.wizard.plan",
+        "schema_version": "2.0.0",
+        "actions": [
+          {
+            "action": "edit-flow-summary",
+            "flow": "flows/on_message.ygtc",
+            "name": "HubSpot CRM Assistant - Message Handler",
+            "description": "Route each incoming chat message to the HubSpot CRM Agentic Worker (dw.agent) and reply with its answer"
+          }
+        ]
+      },
+      "mode": "interactive",
+      "pack_dir": "./agentic-hubspot-crm-demo.pack",
+      "run_build": false,
+      "run_delegate_component": false,
+      "run_delegate_flow": false,
+      "run_doctor": false,
+      "sign": false
+    },
+    "locks": {}
+  },
+  "pack": {
+    "wizard_id": "greentic-pack.wizard.run",
+    "schema_id": "greentic-pack.wizard.answers",
+    "schema_version": "1.0.0",
+    "locale": "en-GB",
+    "answers": {
+      "dry_run": false,
+      "mode": "interactive",
+      "pack_dir": ".",
+      "run_build": false,
+      "run_delegate_component": false,
+      "run_delegate_flow": false,
+      "run_doctor": false,
+      "selected_actions": [
+        "main.update_application_pack",
+        "update_application_pack.run_update_validate",
+        "pipeline.update_validate",
+        "pipeline.sign_prompt.skip",
+        "main.exit"
+      ],
+      "sign": false
+    },
+    "locks": {}
+  },
+  "flow": null,
+  "pack_overlay": {
+    "files": [
+      {
+        "path": "pack.yaml",
+        "content": "pack_id: agentic-hubspot-crm-demo\nversion: 0.1.0\nkind: application\npublisher: Greentic\ncomponents: []\ndependencies: []\nflows:\n- id: on_message\n  file: flows/on_message.ygtc\n  tags:\n  - default\n  entrypoints:\n  - default\nagents:\n  hubspot_assistant:\n    agent_id: hubspot_assistant\n    system_prompt: \"You are a HubSpot CRM assistant running as an Agentic Worker inside a Greentic flow. You help a sales and customer-success team manage their HubSpot CRM: contacts, deals, companies, and support tickets. Use hubspot_contacts, hubspot_deals, hubspot_companies, and hubspot_tickets (each takes an operation of create, search, update, or get) and hubspot_associate to link two records. Always search before creating a record to avoid duplicates. Always confirm with the user before an update or an association, because those change existing data. After any create or update, report the record id and its HubSpot URL. Answer concisely in the user's language. Never invent record ids, properties, or results — only report what the tools return.\"\n    tools:\n      - extension_id: greentic.hubspot\n        tool_name: hubspot_contacts\n      - extension_id: greentic.hubspot\n        tool_name: hubspot_deals\n      - extension_id: greentic.hubspot\n        tool_name: hubspot_companies\n      - extension_id: greentic.hubspot\n        tool_name: hubspot_tickets\n      - extension_id: greentic.hubspot\n        tool_name: hubspot_associate\n    guardrails: []\n    llm:\n      provider: deepseek\n      model: deepseek-chat\n      credential_ref: deepseek\n    limits:\n      max_iter: 8\n      timeout: 120\n"
+      },
+      {
+        "path": "flows/on_message.ygtc",
+        "content": "id: default\ntitle: HubSpot CRM Assistant - Message Handler\ndescription: Route each incoming chat message to the HubSpot CRM Agentic Worker (dw.agent) and reply with its answer\ntype: messaging\nstart: assistant\n\nnodes:\n  # The single logic node: an Agentic Worker (dw.agent). `operation` selects\n  # which embedded agent runs (must match an agent_id under pack.yaml `agents:`).\n  # The agent receives the user's message text as `user_text` and returns `reply`.\n  assistant:\n    dw.agent:\n      user_text: \"{{in.input.text}}\"\n    operation: hubspot_assistant\n    routing:\n      - to: send_reply\n\n  # Builtin reply node — routes the agent's answer back to the active channel.\n  send_reply:\n    emit.response:\n      messages:\n        - type: text\n          text: \"{{node.assistant.reply}}\"\n    routing:\n      - out: true\n"
+      },
+      {
+        "path": "assets/secret-requirements.json",
+        "content": "[\n  {\n    \"key\": \"hubspot/access_token\",\n    \"description\": \"HubSpot Private App access token (https://developers.hubspot.com/docs/api/private-apps). Used by the agent's hubspot_* tools as a Bearer token; only api.hubapi.com is reachable.\"\n  },\n  {\n    \"key\": \"llm/deepseek\",\n    \"description\": \"DeepSeek LLM API key for the agentic worker's reasoning loop.\"\n  }\n]"
+      },
+      {
+        "path": "assets/setup.yaml",
+        "content": "provider_id: agentic-hubspot-crm-demo\nversion: 1\ntitle: HubSpot CRM Assistant — credentials\ndescription: API keys for the agentic worker and its HubSpot CRM tools.\nquestions:\n  - name: deepseek\n    title: DeepSeek API key\n    kind: string\n    required: true\n    secret: true\n    help: \"LLM API key for the agentic worker's reasoning loop (https://platform.deepseek.com).\"\n    group: LLM\n    docs_url: \"https://platform.deepseek.com\"\n    placeholder: \"sk-...\"\n  - name: access_token\n    title: HubSpot Private App token\n    kind: string\n    required: true\n    secret: true\n    help: \"HubSpot Private App access token used by the hubspot_* tools (https://developers.hubspot.com/docs/api/private-apps).\"\n    group: Tools\n    docs_url: \"https://developers.hubspot.com/docs/api/private-apps\"\n    placeholder: \"pat-...\"\n"
+      }
+    ]
+  }
+}
