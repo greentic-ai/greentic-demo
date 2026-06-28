@@ -70,7 +70,7 @@
       },
       {
         "path": "assets/secret-requirements.json",
-        "content": "[\n  {\n    \"key\": \"hubspot/access_token\",\n    \"description\": \"HubSpot Private App access token (https://developers.hubspot.com/docs/api/private-apps). Used by the agent's hubspot_* tools as a Bearer token; only api.hubapi.com is reachable.\"\n  },\n  {\n    \"key\": \"llm/deepseek\",\n    \"description\": \"DeepSeek LLM API key for the agentic worker's reasoning loop.\"\n  }\n]"
+        "content": "[\n  {\n    \"key\": \"hubspot/access_token\",\n    \"description\": \"HubSpot Private App access token (Private App mode, the default; https://developers.hubspot.com/docs/api/private-apps). Used by the agent's hubspot_* tools as a Bearer token; only api.hubapi.com is reachable. Not needed in OAuth mode.\"\n  },\n  {\n    \"key\": \"hubspot/auth_mode\",\n    \"description\": \"Optional auth selector for the HubSpot extension. Set to 'oauth' to fetch tokens from the platform OAuth broker (provision per component-hubspot-ext/docs/oauth-setup.md); any other value or unset uses the Private App token.\"\n  },\n  {\n    \"key\": \"llm/deepseek\",\n    \"description\": \"DeepSeek LLM API key for the agentic worker's reasoning loop.\"\n  }\n]"
       },
       {
         "path": "assets/setup.yaml",
