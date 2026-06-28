@@ -41,41 +41,46 @@ When you run `gtc setup`, the HubSpot credentials form asks **how the tools
 authenticate** with a *Connection method* picker:
 
 - **Private App token** (default) — paste a HubSpot Private App token; the field
-  appears only for this choice. This is the mode that works today.
-- **OAuth** — uses the platform OAuth broker (auto-refreshed tokens). Choosing it
-  reveals a *When to connect HubSpot* option (*During setup* vs *In chat*). The
-  live in-setup **Connect HubSpot** button is coming in a platform update; until
-  then OAuth requires the broker to be provisioned first (see the OAuth section
-  below), so for a runnable demo keep **Private App token**.
+  appears only for this choice. Simplest, works immediately.
+- **OAuth** — connect a real HubSpot OAuth app right from the setup form. Choosing
+  it reveals *Client ID*, *Client Secret*, and a live **Connect HubSpot** button.
+  On success the tools use auto-refreshed OAuth tokens (no static token).
 
-The picker only drives the setup form; it does not by itself switch the runtime
-into OAuth mode. The runtime mode is selected by `secret://hubspot/auth_mode`
-(see below).
+The connection runs **inside `gtc setup`** — there is no separate broker process.
 
-## OAuth mode (alternative)
+## OAuth mode (connect from setup)
 
-The same demo can authenticate with **broker-backed OAuth** (auto-refreshed)
-instead of a static Private App token. The HubSpot extension picks the mode from
-`secret://hubspot/auth_mode`: set it to `oauth` and the agent's `hubspot_*` tools
-fetch their token from the platform OAuth broker — the **broker**, not the demo,
-refreshes it.
+The same demo can authenticate with **OAuth** (auto-refreshed) instead of a static
+Private App token. `gtc setup` itself runs the OAuth authorization-code flow and
+stores a refresh token; at run time the HubSpot extension refreshes the access
+token directly against HubSpot (no broker).
 
-One-time prerequisite: register the HubSpot OAuth provider with the broker and
-complete consent, following
-[`component-hubspot-ext/docs/oauth-setup.md`](https://github.com/greentic-biz/component-hubspot-ext/blob/research/docs/oauth-setup.md).
-Once the broker can mint a HubSpot token for your tenant, run the demo in OAuth
-mode — note there is no `GREENTIC_SECRET_HUBSPOT_ACCESS_TOKEN`:
+One-time prerequisite — create a **HubSpot OAuth app**
+(<https://developers.hubspot.com/docs/api/oauth-quickstart-guide>):
+
+1. In the app's **Auth** tab, register the redirect URL
+   `http://localhost:8765/api/oauth/callback` (must match exactly).
+2. Add CRM scopes: `oauth`, `crm.objects.contacts.read/write`,
+   `crm.objects.companies.read/write`, `crm.objects.deals.read/write`, `tickets`.
+3. Copy the **Client ID** and **Client Secret**.
+
+Then run setup on the **fixed port** the redirect was registered with, choose
+*OAuth*, paste the Client ID/Secret, and click **Connect HubSpot**:
 
 ```bash
-GREENTIC_LLM_PROVIDER=deepseek \
-GREENTIC_LLM_API_KEY=sk-your-deepseek-key \
-GREENTIC_SECRET_HUBSPOT_AUTH_MODE=oauth \
-GREENTIC_AW_REDIS_URL=redis://127.0.0.1:6379 \
-gtc start agentic-hubspot-crm-demo-bundle
+gtc setup --port 8765 agentic-hubspot-crm-demo-bundle
 ```
 
-This requires the OAuth broker host import (design-extension host) and the
-extension's `auth_mode` support to be deployed in your runtime.
+A popup opens the real HubSpot consent screen; after you authorize, the form shows
+**Connected ✓** and the demo stores `secret://hubspot/auth_mode=oauth` plus the
+refresh token and client credentials. No `GREENTIC_SECRET_HUBSPOT_ACCESS_TOKEN` is
+needed — start the demo as usual and the `hubspot_*` tools use auto-refreshed
+OAuth tokens.
+
+This needs a `gtc` whose `greentic-setup` includes the embedded OAuth client and
+whose `greentic.hubspot` extension includes brokerless refresh. On an older `gtc`
+the Connect button shows as a text field — leave it blank and use Private App
+token instead.
 
 ## How it works
 
