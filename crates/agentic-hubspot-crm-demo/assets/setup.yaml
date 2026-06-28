@@ -1,0 +1,26 @@
+title: HubSpot CRM Assistant Setup
+description: Configure the LLM provider used by the embedded Agentic Worker (dw.agent). The key, provider, and Redis URL are normally supplied at run time via GREENTIC_LLM_PROVIDER, GREENTIC_LLM_API_KEY, and GREENTIC_AW_REDIS_URL environment variables. The HubSpot Private App token is supplied at run time as GREENTIC_SECRET_HUBSPOT_ACCESS_TOKEN.
+questions:
+  - name: provider
+    kind: string
+    required: false
+    title: LLM provider
+    help: Provider the Agentic Worker uses. Defaults to deepseek; can be overridden at run time with GREENTIC_LLM_PROVIDER.
+    default: deepseek
+    placeholder: deepseek
+  - name: model
+    kind: string
+    required: false
+    title: LLM model
+    help: Model name for the configured provider. For deepseek, deepseek-chat is a known-good default.
+    default: deepseek-chat
+    placeholder: deepseek-chat
+  - name: api_key_secret
+    secret_key: api_key_secret
+    kind: string
+    required: false
+    secret: true
+    title: LLM API key secret
+    help: API key for the LLM provider. Usually supplied at run time via GREENTIC_LLM_API_KEY instead of being baked into the pack.
+    default: ${GREENTIC_LLM_API_KEY}
+    placeholder: ${GREENTIC_LLM_API_KEY}
