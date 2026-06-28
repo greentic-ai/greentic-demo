@@ -119,3 +119,26 @@ codebase when the plan is written (each has a known precedent to copy):
    `component-adaptive-card` (precedent: existing card demos' packs).
 3. Confirm `emit.response` accepts `renderedCard` from a generic
    adaptive-card node output (precedent: `telco-x-demo` `renderedCard`).
+
+## Implementation note (2026-06-28): design revised during build
+
+Two design points changed when they hit real toolchain constraints:
+
+1. **Welcome trigger: state-flag → greeting-conditioned.** The pack build
+   (`greentic-pack`) only treats `session.wait/flow.call/provider.invoke/dw.agent/
+   dw.agent_graph/sorla.call/operala.call/agentic.call/emit.*` as builtin nodes
+   (`greentic-pack/crates/greentic-pack/src/builtin.rs`). `state.get`/`state.set`
+   are not builtins and cannot resolve to a component, so the build rejects them.
+   A routing-only "pure router" node is also rejected (every node must carry one
+   component key). The flow therefore runs the Agentic Worker first and branches
+   on **message content** in its routing: greeting/empty (`hi/hello/start/help`) →
+   welcome card, otherwise → research answer card. (The agent runs on greetings
+   too — a minor, acceptable cost for a demo.)
+2. **Resolve sidecars required.** Component-backed `card:` nodes need explicit
+   `flows/on_message.ygtc.resolve.json` + `.resolve.summary.json` entries mapping
+   each card node to the adaptive-card wasm + digest; `greentic-pack resolve`
+   does not auto-populate them. These ship as `pack_overlay` files in
+   `build-answer.json`.
+3. **Vendored manifest version 0.2.0.** `package_demos.sh
+   sync_adaptive_card_component_version` forces the pack.yaml component version to
+   `0.2.0`, so the vendored `component.manifest.json` was bumped to match.
