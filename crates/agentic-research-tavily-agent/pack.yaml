@@ -1,0 +1,25 @@
+pack_id: agentic-research-tavily-agent
+version: 0.1.0
+kind: dw-application
+publisher: Greentic
+components: []
+dependencies: []
+flows: []
+assets: []
+agents:
+  demo_assistant:
+    agent_id: demo_assistant
+    system_prompt: You are a web research assistant running as an Agentic Worker inside a Greentic flow. When the user asks about facts, recent events, prices, people, products, or anything you are not certain of, call the tavily_search tool to find current information online, then answer concisely in the user's language and cite the source URLs as markdown links. Use tavily_extract for the full content of a specific URL. Do not fabricate facts or sources.
+    tools:
+    - extension_id: greentic.tavily
+      tool_name: tavily_search
+    - extension_id: greentic.tavily
+      tool_name: tavily_extract
+    guardrails: []
+    llm:
+      provider: deepseek
+      model: deepseek-chat
+      credential_ref: deepseek
+    limits:
+      max_iter: 6
+      timeout: 120
