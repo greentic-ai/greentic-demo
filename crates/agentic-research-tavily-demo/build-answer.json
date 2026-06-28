@@ -66,15 +66,11 @@
       },
       {
         "path": "flows/on_message.ygtc",
-        "content": "id: default\ntitle: Agentic Worker Demo - Message Handler\ndescription: Route each incoming chat message to an Agentic Worker (dw.agent) and reply with its answer\ntype: messaging\nstart: assistant\n\nnodes:\n  # The single logic node: an Agentic Worker (dw.agent). `operation` selects\n  # which embedded agent runs (must match an agent_id under pack.yaml `agents:`).\n  # The agent receives the user's message text as `user_text` and returns `reply`.\n  assistant:\n    dw.agent:\n      user_text: \"{{in.input.text}}\"\n    operation: demo_assistant\n    routing:\n      - to: send_reply\n\n  # Builtin reply node \u2014 routes the agent's answer back to the active channel.\n  send_reply:\n    emit.response:\n      messages:\n        - type: text\n          text: \"{{node.assistant.reply}}\"\n    routing:\n      - out: true\n"
+        "content": "id: default\ntitle: Agentic Worker Demo - Message Handler\ndescription: Route each incoming chat message to an Agentic Worker (dw.agent) and reply with its answer\ntype: messaging\nstart: assistant\n\nnodes:\n  # The single logic node: an Agentic Worker (dw.agent). `operation` selects\n  # which embedded agent runs (must match an agent_id under pack.yaml `agents:`).\n  # The agent receives the user's message text as `user_text` and returns `reply`.\n  assistant:\n    dw.agent:\n      user_text: \"{{in.input.text}}\"\n    operation: demo_assistant\n    routing:\n      - to: send_reply\n\n  # Builtin reply node — routes the agent's answer back to the active channel.\n  send_reply:\n    emit.response:\n      messages:\n        - type: text\n          text: \"{{node.assistant.reply}}\"\n    routing:\n      - out: true\n"
       },
       {
-        "path": "assets/secret-requirements.json",
-        "content": "[\n  {\n    \"key\": \"tavily/api_key\",\n    \"description\": \"Tavily web-search API key (https://tavily.com). Used by the agent's tavily_search / tavily_extract tools.\"\n  },\n  {\n    \"key\": \"llm/deepseek\",\n    \"description\": \"DeepSeek LLM API key for the agentic worker's reasoning loop.\"\n  }\n]"
-      },
-      {
-        "path": "assets/setup.yaml",
-        "content": "provider_id: agentic-research-tavily-demo\nversion: 1\ntitle: Agentic Research (Tavily) \u2014 credentials\ndescription: API keys for the agentic worker and its Tavily web-search tools.\nquestions:\n  - name: deepseek\n    title: DeepSeek API key\n    kind: string\n    required: true\n    secret: true\n    help: \"LLM API key for the agentic worker's reasoning loop (https://platform.deepseek.com).\"\n    group: LLM\n    docs_url: \"https://platform.deepseek.com\"\n    placeholder: \"sk-...\"\n  - name: api_key\n    title: Tavily API key\n    kind: string\n    required: true\n    secret: true\n    help: \"Web-search API key used by tavily_search / tavily_extract (https://tavily.com).\"\n    group: Tools\n    docs_url: \"https://tavily.com\"\n    placeholder: \"tvly-...\"\n"
+        "path": "pack.extensions.json",
+        "content": "{\n  \"version\": 1,\n  \"extensions\": [\n    {\n      \"id\": \"greentic.tavily\",\n      \"role\": \"tool\",\n      \"source\": { \"kind\": \"store\", \"ref\": \"store://greentic.tavily@1.2.4-research\", \"allow_tags\": true }\n    }\n  ]\n}"
       }
     ]
   }
