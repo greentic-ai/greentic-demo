@@ -1,0 +1,94 @@
+{
+  "wizard_id": "greentic-dev.wizard.launcher.main",
+  "schema_id": "greentic-dev.launcher.main",
+  "schema_version": "1.0.0",
+  "locale": "en-GB",
+  "answers": {
+    "selected_action": "bundle",
+    "delegate_answer_document": {
+      "wizard_id": "greentic-bundle.wizard.run",
+      "schema_id": "greentic-bundle.wizard.answers",
+      "schema_version": "1.0.0",
+      "locale": "en-GB",
+      "answers": {
+        "access_rules": [
+          {
+            "policy": "public",
+            "rule_path": "agentic-hubspot-crm-demo",
+            "tenant": "default"
+          },
+          {
+            "policy": "public",
+            "rule_path": "agentic-hubspot-crm-demo",
+            "tenant": "demo"
+          }
+        ],
+        "advanced_setup": false,
+        "app_pack_entries": [
+          {
+            "detected_kind": "https",
+            "display_name": "HubSpot CRM Assistant Demo Pack",
+            "mapping": {
+              "scope": "global"
+            },
+            "pack_id": "agentic-hubspot-crm-demo",
+            "reference": "https://github.com/greenticai/greentic-demo/releases/latest/download/agentic-hubspot-crm-demo.gtpack"
+          }
+        ],
+        "app_packs": [
+          "https://github.com/greenticai/greentic-demo/releases/latest/download/agentic-hubspot-crm-demo.gtpack"
+        ],
+        "bundle_id": "agentic-hubspot-crm-demo-bundle",
+        "bundle_name": "agentic-hubspot-crm-demo-bundle",
+        "capabilities": [
+          "greentic.cap.bundle_assets.read.v1"
+        ],
+        "export_intent": false,
+        "extension_provider_entries": [
+          {
+            "detected_kind": "oci",
+            "display_name": "Greentic Messaging Webchat GUI (stable)",
+            "provider_id": "greentic.messaging.webchat-gui.stable",
+            "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
+            "version": "stable"
+          },
+          {
+            "detected_kind": "oci",
+            "display_name": "Greentic Messaging Webchat (stable)",
+            "provider_id": "greentic.messaging.webchat.stable",
+            "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:stable",
+            "version": "stable"
+          },
+          {
+            "detected_kind": "oci",
+            "display_name": "Greentic State Memory (stable)",
+            "provider_id": "state-memory",
+            "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
+            "version": "stable"
+          }
+        ],
+        "extension_providers": [
+          "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
+          "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:stable",
+          "oci://ghcr.io/greenticai/packs/state/state-memory:stable"
+        ],
+        "mode": "create",
+        "output_dir": "agentic-hubspot-crm-demo-bundle",
+        "remote_catalogs": [],
+        "setup_answers": {},
+        "setup_execution_intent": false,
+        "setup_specs": {}
+      },
+      "locks": {
+        "cache_policy": "workspace-local",
+        "catalogs": [],
+        "execution": "execute",
+        "lock_file": "bundle.lock.json",
+        "requested_mode": "create",
+        "setup_state_files": [],
+        "workspace_root": "bundle.yaml"
+      }
+    }
+  },
+  "locks": {}
+}
