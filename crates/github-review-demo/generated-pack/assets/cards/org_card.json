@@ -1,0 +1,41 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "GitHub Review Assistant",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Connected. Pick one of your organizations to review:",
+      "isSubtle": true,
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "wrap": true,
+      "text": "{{#each payload.result}}- **{{login}}**\n{{else}}_No organizations found for your account._{{/each}}"
+    },
+    {
+      "type": "Input.Text",
+      "id": "org",
+      "label": "Organization",
+      "placeholder": "type an org from the list, e.g. greenticai",
+      "isRequired": true,
+      "errorMessage": "Enter one of the organizations listed above."
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Continue →",
+      "style": "positive",
+      "data": { "action": "pick_org" }
+    }
+  ]
+}

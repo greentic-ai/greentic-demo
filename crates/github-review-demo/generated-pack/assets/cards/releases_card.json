@@ -1,0 +1,37 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Recent releases — {{payload.org}}/{{payload.repo}}",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Latest published releases.",
+      "isSubtle": true,
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "wrap": true,
+      "text": "{{#each payload.result}}- 🏷️ [{{tag_name}} {{name}}]({{html_url}})\n{{else}}No releases published yet.{{/each}}"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "⟵ Back to repos",
+      "data": { "action": "pick_org", "org": "{{payload.org}}" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Pick another org",
+      "data": { "action": "home" }
+    }
+  ]
+}
