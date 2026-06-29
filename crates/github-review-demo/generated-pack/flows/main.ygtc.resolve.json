@@ -7,35 +7,35 @@
         "kind": "local",
         "path": "../components/github_reports/github_reports.component.wasm"
       },
-      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4"
+      "digest": "sha256:669b4eb78b98f23c2016767264e72cefd138db6c5bed1b71ac4b9d1bf63aaa3f"
     },
     "repos": {
       "source": {
         "kind": "local",
         "path": "../components/github_reports/github_reports.component.wasm"
       },
-      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4"
+      "digest": "sha256:669b4eb78b98f23c2016767264e72cefd138db6c5bed1b71ac4b9d1bf63aaa3f"
     },
     "prs": {
       "source": {
         "kind": "local",
         "path": "../components/github_reports/github_reports.component.wasm"
       },
-      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4"
+      "digest": "sha256:669b4eb78b98f23c2016767264e72cefd138db6c5bed1b71ac4b9d1bf63aaa3f"
     },
     "ci": {
       "source": {
         "kind": "local",
         "path": "../components/github_reports/github_reports.component.wasm"
       },
-      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4"
+      "digest": "sha256:669b4eb78b98f23c2016767264e72cefd138db6c5bed1b71ac4b9d1bf63aaa3f"
     },
     "releases": {
       "source": {
         "kind": "local",
         "path": "../components/github_reports/github_reports.component.wasm"
       },
-      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4"
+      "digest": "sha256:669b4eb78b98f23c2016767264e72cefd138db6c5bed1b71ac4b9d1bf63aaa3f"
     },
     "org_card": {
       "source": {
