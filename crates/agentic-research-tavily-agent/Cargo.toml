@@ -1,0 +1,9 @@
+[package]
+name = "agentic-research-tavily-agent"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+description = "Greentic standalone Agentic Worker pack (dw-application) for the Tavily research agent."
+
+[lib]
+path = "src/lib.rs"

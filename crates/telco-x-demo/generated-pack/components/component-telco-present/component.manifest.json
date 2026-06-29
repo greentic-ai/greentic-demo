@@ -2,7 +2,7 @@
   "$schema": "https://greenticai.github.io/greentic-component/schemas/v1/component.manifest.schema.json",
   "id": "component-telco-present",
   "name": "component-telco-present",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "world": "greentic:component/component@0.6.0",
   "describe_export": "describe",
   "operations": [
@@ -94,7 +94,24 @@
   "default_operation": "present",
   "config_schema": {
     "type": "object",
-    "properties": {},
+    "properties": {
+      "operator_profile": {
+        "type": "object",
+        "description": "Optional operator-specific resolver and adapter data supplied by the bundle host.",
+        "properties": {
+          "resolver_catalog_json": {
+            "type": "string",
+            "description": "Serialized Telco-X resolver catalog JSON."
+          },
+          "adapter_fixtures_json": {
+            "type": "string",
+            "description": "Serialized Telco-X adapter fixture/source JSON."
+          }
+        },
+        "required": ["resolver_catalog_json", "adapter_fixtures_json"],
+        "additionalProperties": false
+      }
+    },
     "required": [],
     "additionalProperties": false
   },
