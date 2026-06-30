@@ -8,7 +8,7 @@
         "kind": "local",
         "path": "../components/github_reports/github_reports.component.wasm"
       },
-      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4",
+      "digest": "sha256:4507beb47d9d53b79d2a62a7bece59bbcd6c7e9dcb0357316ed6e2cc5e373ff8",
       "manifest": {
         "world": "greentic:component/component@0.6.0",
         "version": "0.1.0"
@@ -20,7 +20,7 @@
         "kind": "local",
         "path": "../components/github_reports/github_reports.component.wasm"
       },
-      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4",
+      "digest": "sha256:4507beb47d9d53b79d2a62a7bece59bbcd6c7e9dcb0357316ed6e2cc5e373ff8",
       "manifest": {
         "world": "greentic:component/component@0.6.0",
         "version": "0.1.0"
@@ -32,7 +32,7 @@
         "kind": "local",
         "path": "../components/github_reports/github_reports.component.wasm"
       },
-      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4",
+      "digest": "sha256:4507beb47d9d53b79d2a62a7bece59bbcd6c7e9dcb0357316ed6e2cc5e373ff8",
       "manifest": {
         "world": "greentic:component/component@0.6.0",
         "version": "0.1.0"
@@ -44,7 +44,7 @@
         "kind": "local",
         "path": "../components/github_reports/github_reports.component.wasm"
       },
-      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4",
+      "digest": "sha256:4507beb47d9d53b79d2a62a7bece59bbcd6c7e9dcb0357316ed6e2cc5e373ff8",
       "manifest": {
         "world": "greentic:component/component@0.6.0",
         "version": "0.1.0"
@@ -56,7 +56,7 @@
         "kind": "local",
         "path": "../components/github_reports/github_reports.component.wasm"
       },
-      "digest": "sha256:dde5333f013992a4de02f6dbd8d69b18a80d12b72c05c74d9eedb06a8a48bea4",
+      "digest": "sha256:4507beb47d9d53b79d2a62a7bece59bbcd6c7e9dcb0357316ed6e2cc5e373ff8",
       "manifest": {
         "world": "greentic:component/component@0.6.0",
         "version": "0.1.0"
