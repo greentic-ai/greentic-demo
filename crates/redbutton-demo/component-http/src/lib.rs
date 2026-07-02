@@ -2,7 +2,7 @@
 use std::collections::BTreeMap;
 
 #[cfg(target_arch = "wasm32")]
-use greentic_interfaces_guest::component_v0_6::node;
+use greentic_interfaces_guest::component_v0_6::{component_i18n, component_qa, node};
 #[cfg(target_arch = "wasm32")]
 use greentic_interfaces_guest::http_client;
 #[cfg(target_arch = "wasm32")]
@@ -190,7 +190,46 @@ impl node::Guest for Component {
 }
 
 #[cfg(target_arch = "wasm32")]
-greentic_interfaces_guest::export_component_v060!(Component);
+fn qa_mode_to_normalized(mode: component_qa::QaMode) -> qa::NormalizedMode {
+    match mode {
+        component_qa::QaMode::Default | component_qa::QaMode::Setup => qa::NormalizedMode::Setup,
+        component_qa::QaMode::Update => qa::NormalizedMode::Update,
+        component_qa::QaMode::Remove => qa::NormalizedMode::Remove,
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+impl component_qa::Guest for Component {
+    fn qa_spec(mode: component_qa::QaMode) -> Vec<u8> {
+        qa::qa_spec_cbor(qa_mode_to_normalized(mode))
+    }
+
+    fn apply_answers(
+        mode: component_qa::QaMode,
+        current_config: Vec<u8>,
+        answers: Vec<u8>,
+    ) -> Vec<u8> {
+        let payload = serde_json::json!({
+            "answers": parse_payload(&answers),
+            "current_config": parse_payload(&current_config),
+        });
+        encode_cbor(&qa::apply_answers(qa_mode_to_normalized(mode), &payload))
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+impl component_i18n::Guest for Component {
+    fn i18n_keys() -> Vec<String> {
+        qa::i18n_keys()
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+greentic_interfaces_guest::export_component_v060!(
+    Component,
+    component_qa: Component,
+    component_i18n: Component,
+);
 
 pub fn describe_payload() -> String {
     serde_json::json!({
