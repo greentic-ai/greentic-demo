@@ -1,0 +1,66 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Connect GitHub — provider setup",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "1) In your GitHub OAuth App, paste this as the Authorization callback URL:",
+      "wrap": true,
+      "spacing": "Medium"
+    },
+    {
+      "type": "Input.Text",
+      "id": "callback_url",
+      "label": "Callback URL (copy this)",
+      "value": "http://127.0.0.1:8080/oauth/callback/github",
+      "isRequired": false
+    },
+    {
+      "type": "TextBlock",
+      "text": "2) Then paste your GitHub OAuth App credentials below:",
+      "wrap": true,
+      "spacing": "Medium"
+    },
+    {
+      "type": "Input.Text",
+      "id": "client_id",
+      "label": "Client ID (key)",
+      "placeholder": "Iv1.xxxxxxxxxxxxxxxx",
+      "isRequired": true,
+      "errorMessage": "Client ID is required"
+    },
+    {
+      "type": "Input.Text",
+      "id": "client_secret",
+      "label": "Client Secret",
+      "placeholder": "ghs_xxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+      "style": "Password",
+      "isRequired": true,
+      "errorMessage": "Client Secret is required"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Save & connect",
+      "data": {
+        "action": "oauth.provider.setup",
+        "provider_id": "github",
+        "auth_url": "https://github.com/login/oauth/authorize",
+        "token_url": "https://github.com/login/oauth/access_token",
+        "client_id_key": "tenants/demo/oauth/github/client_id",
+        "client_secret_key": "tenants/demo/oauth/github/client_secret",
+        "public_base_url": "http://127.0.0.1:8080",
+        "scopes": ["repo", "read:org", "read:user"]
+      }
+    }
+  ]
+}
