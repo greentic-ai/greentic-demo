@@ -1,0 +1,37 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Open pull requests — {{payload.org}}/{{payload.repo}}",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Open PRs that may need your review.",
+      "isSubtle": true,
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "wrap": true,
+      "text": "{{#each payload.result}}- [#{{number}} {{title}}]({{html_url}}) — _{{user.login}}_\n{{else}}No open pull requests right now. 🎉{{/each}}"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "⟵ Back to repos",
+      "data": { "action": "pick_org", "org": "{{payload.org}}" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Pick another org",
+      "data": { "action": "home" }
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "type": "AdaptiveCard",
+  "version": "1.5",
+  "body": [
+    {
+      "type": "TextBlock",
+      "size": "Large",
+      "weight": "Bolder",
+      "text": "Repositories in {{payload.org}}",
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "text": "Pick a repo, then choose what to review:",
+      "isSubtle": true,
+      "wrap": true
+    },
+    {
+      "type": "TextBlock",
+      "wrap": true,
+      "text": "{{#each payload.result}}- **{{name}}**\n{{else}}_No repositories in this organization._{{/each}}"
+    },
+    {
+      "type": "Input.Text",
+      "id": "repo",
+      "label": "Repository",
+      "placeholder": "type a repo from the list, e.g. component-oauth-card",
+      "isRequired": true,
+      "errorMessage": "Enter one of the repositories listed above."
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Open PRs to review",
+      "style": "positive",
+      "data": { "action": "open_prs", "org": "{{payload.org}}" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "CI failures",
+      "data": { "action": "ci_fails", "org": "{{payload.org}}" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "Recent releases",
+      "data": { "action": "releases", "org": "{{payload.org}}" }
+    },
+    {
+      "type": "Action.Submit",
+      "title": "⟵ Pick another org",
+      "data": { "action": "home" }
+    }
+  ]
+}

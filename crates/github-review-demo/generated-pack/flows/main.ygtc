@@ -1,0 +1,144 @@
+id: main
+type: messaging
+start: gate
+nodes:
+  # GitHub Review Assistant — OAuth bake-in demo with an org -> repo -> report
+  # wizard. Every step is a real MCP call (component.exec) against the OAuth-aware
+  # github_reports component; the cards are static templates whose lists are filled
+  # from each call's structured_content via handlebars {{#each}}.
+  #
+  # No cross-message resume in greentic-start: each inbound message re-runs from
+  # `gate`. A button/Submit carries its `action` (+ picked org/repo) in
+  # metadata, surfaced as `response.*` for routing and `{{in.input.metadata.*}}`
+  # for node inputs. `gate` calls list_user_orgs, which both auth-gates (no token
+  # -> sign-in card) and provides the org list for the welcome card.
+  gate:
+    component.exec:
+      component: "github_reports"
+      operation: list_user_orgs
+      input:
+        per_page: 50
+    routing:
+      - condition: response.action == "open_prs"
+        to: prs
+      - condition: response.action == "ci_fails"
+        to: ci
+      - condition: response.action == "releases"
+        to: releases
+      - condition: response.action == "pick_org"
+        to: repos
+      # Authed (no needs_auth flag on the call result) -> show the org chooser.
+      # No token -> none match -> Wait -> the adapter's own OAuth sign-in card
+      # (which itself states you can only proceed after authorizing).
+      - condition: needs_auth != true
+        to: org_card
+
+  org_card:
+    card:
+      input:
+        card_source: asset
+        card_spec:
+          asset_path: cards/org_card.json
+        payload:
+          result: "{{node.gate.result.structured_content}}"
+        mode: renderAndValidate
+    routing:
+      - out: true
+
+  repos:
+    component.exec:
+      component: "github_reports"
+      operation: list_org_repos
+      input:
+        org: "{{in.input.metadata.org}}"
+        sort: "updated"
+        per_page: 50
+    routing:
+      - to: repo_card
+  repo_card:
+    card:
+      input:
+        card_source: asset
+        card_spec:
+          asset_path: cards/repo_card.json
+        payload:
+          result: "{{node.repos.result.structured_content}}"
+          org: "{{in.input.metadata.org}}"
+        mode: renderAndValidate
+    routing:
+      - out: true
+
+  prs:
+    component.exec:
+      component: "github_reports"
+      operation: list_open_pull_requests
+      input:
+        owner: "{{in.input.metadata.org}}"
+        repo: "{{in.input.metadata.repo}}"
+        state: "open"
+        sort: "updated"
+        per_page: 10
+    routing:
+      - to: prs_card
+  prs_card:
+    card:
+      input:
+        card_source: asset
+        card_spec:
+          asset_path: cards/prs_card.json
+        payload:
+          result: "{{node.prs.result.structured_content}}"
+          org: "{{in.input.metadata.org}}"
+          repo: "{{in.input.metadata.repo}}"
+        mode: renderAndValidate
+    routing:
+      - out: true
+
+  ci:
+    component.exec:
+      component: "github_reports"
+      operation: list_failed_workflow_runs
+      input:
+        owner: "{{in.input.metadata.org}}"
+        repo: "{{in.input.metadata.repo}}"
+        status: "failure"
+        per_page: 10
+    routing:
+      - to: ci_card
+  ci_card:
+    card:
+      input:
+        card_source: asset
+        card_spec:
+          asset_path: cards/ci_card.json
+        payload:
+          result: "{{node.ci.result.structured_content.workflow_runs}}"
+          org: "{{in.input.metadata.org}}"
+          repo: "{{in.input.metadata.repo}}"
+        mode: renderAndValidate
+    routing:
+      - out: true
+
+  releases:
+    component.exec:
+      component: "github_reports"
+      operation: list_releases
+      input:
+        owner: "{{in.input.metadata.org}}"
+        repo: "{{in.input.metadata.repo}}"
+        per_page: 10
+    routing:
+      - to: releases_card
+  releases_card:
+    card:
+      input:
+        card_source: asset
+        card_spec:
+          asset_path: cards/releases_card.json
+        payload:
+          result: "{{node.releases.result.structured_content}}"
+          org: "{{in.input.metadata.org}}"
+          repo: "{{in.input.metadata.repo}}"
+        mode: renderAndValidate
+    routing:
+      - out: true
