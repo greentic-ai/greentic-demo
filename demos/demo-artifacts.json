@@ -37,14 +37,14 @@
       "media_type": "application/vnd.greentic.answers.setup.v1+json"
     },
     {
-      "demo": "github-mcp",
-      "file": "demos/github-mcp-create-answers.json",
+      "demo": "github-review-demo",
+      "file": "demos/github-review-demo-create-answers.json",
       "artifact": "create",
       "media_type": "application/vnd.greentic.answers.create.v1+json"
     },
     {
-      "demo": "github-mcp",
-      "file": "demos/github-mcp-setup-answers.json",
+      "demo": "github-review-demo",
+      "file": "demos/github-review-demo-setup-answers.json",
       "artifact": "setup",
       "media_type": "application/vnd.greentic.answers.setup.v1+json"
     },
