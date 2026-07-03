@@ -78,15 +78,68 @@ rm -rf "$TMP_ROOT"
 mkdir -p "$TMP_ROOT"
 mkdir -p "$LOCAL_PACK_INPUT_DIR"
 
-# Pin the OCI pack cache to a fresh per-run directory so every bundle in
-# this CI run resolves `oci://…:latest` references against the same
-# snapshot. Without this, two bundles built in sequence could pick up
-# different `:latest` artifacts if an upstream tag rotated between
-# resolutions, or could reuse stale bytes from a previous run's cache.
-# The cache is a build cache only — wiping it costs at most one network
-# fetch per referenced pack within a run.
+# Use a fresh per-run OCI pack cache. This is a build cache only (wiping it
+# costs at most one network fetch per pack per run) and avoids reusing stale
+# bytes from a previous run. NOTE: the cache does NOT prevent cross-bundle
+# drift — greentic-bundle resolves provider refs against each bundle's own
+# workspace, so a `:stable`/`:latest` tag that rotates mid-run can still yield
+# different bytes across bundles. That race is closed by resolve_provider_pins
+# below, which pins every provider ref to an immutable `@sha256:` digest up front.
 export GREENTIC_PACK_CACHE_DIR="$TMP_ROOT/pack-cache"
 mkdir -p "$GREENTIC_PACK_CACHE_DIR"
+
+# Resolve every mutable provider tag (`:stable`/`:latest`/`:<ver>`) referenced
+# by the demo answer docs to an immutable `@sha256:` digest ONCE per run, and
+# record the mapping in $PROVIDER_PIN_MAP. The bundle-build step rewrites
+# provider refs through this map so every bundle in the run pins identical
+# provider bytes — closing the tag-rotation race the drift gate only detects.
+#
+# Best-effort: if `oras` is unavailable or a ref cannot be resolved (e.g. no
+# GHCR login), that ref is left in its original tag form and the run proceeds.
+# This mirrors the drift gate's skip-with-warning philosophy; pinning is a
+# hardening, not a hard requirement.
+PROVIDER_PIN_MAP="$TMP_ROOT/provider-pins.json"
+
+resolve_provider_pins() {
+    echo '{}' > "$PROVIDER_PIN_MAP"
+
+    if ! command -v oras >/dev/null 2>&1; then
+        echo "Warning: oras not found — skipping provider digest pinning." >&2
+        return 0
+    fi
+
+    local refs
+    refs="$(jq -r '
+        [ .answers.delegate_answer_document.answers.extension_provider_entries[]?.reference,
+          .answers.delegate_answer_document.answers.extension_providers[]? ]
+        | .[]? | select(type == "string")
+    ' "$DEMOS_DIR"/*-create-answers.json 2>/dev/null \
+        | grep -E '^oci://[^@]+:[^@/]+$' | sort -u || true)"
+
+    if [ -z "$refs" ]; then
+        return 0
+    fi
+
+    local resolved=0 unresolved=0 ref oci_ref digest pinned
+    while IFS= read -r ref; do
+        [ -n "$ref" ] || continue
+        oci_ref="${ref#oci://}"
+        digest="$(oras manifest fetch --descriptor "$oci_ref" 2>/dev/null \
+            | jq -r '.digest // empty' 2>/dev/null || true)"
+        if [ -z "$digest" ]; then
+            echo "Warning: could not resolve digest for $ref — leaving tag ref." >&2
+            unresolved=$((unresolved + 1))
+            continue
+        fi
+        pinned="oci://${oci_ref%:*}@${digest}"
+        jq --arg k "$ref" --arg v "$pinned" '. + {($k): $v}' \
+            "$PROVIDER_PIN_MAP" > "$PROVIDER_PIN_MAP.tmp" \
+            && mv "$PROVIDER_PIN_MAP.tmp" "$PROVIDER_PIN_MAP"
+        resolved=$((resolved + 1))
+    done <<< "$refs"
+
+    echo "Provider digest pinning: ${resolved} pinned, ${unresolved} unresolved." >&2
+}
 
 # Seed LOCAL_PACK_INPUT_DIR with committed packs before cleanup so that
 # pre-built packs without rebuild sources (e.g. cloud-deploy-demo-app.gtpack)
@@ -595,6 +648,9 @@ if [ ${#bundle_answers[@]} -eq 0 ]; then
     exit 1
 fi
 
+# Pin provider refs to immutable digests before composing any bundle.
+resolve_provider_pins
+
 for source_answers in "${bundle_answers[@]}"; do
     demo_basename="$(basename "$source_answers" -create-answers.json)"
     temp_answers="$TMP_ROOT/${demo_basename}-bundle-answers.json"
@@ -608,8 +664,10 @@ for source_answers in "${bundle_answers[@]}"; do
         continue
     fi
 
-    jq --arg local_pack_dir "$LOCAL_PACK_INPUT_DIR" --arg out "$output_dir" '
-      .answers.delegate_answer_document.answers.output_dir = $out
+    jq --arg local_pack_dir "$LOCAL_PACK_INPUT_DIR" --arg out "$output_dir" \
+       --slurpfile pins "$PROVIDER_PIN_MAP" '
+      ($pins[0] // {}) as $pin
+      | .answers.delegate_answer_document.answers.output_dir = $out
       | .answers.delegate_answer_document.answers.app_pack_entries |= map(
           if (.reference | test("/download/[^/]+\\.gtpack$")) then
             .reference as $ref
@@ -627,6 +685,17 @@ for source_answers in "${bundle_answers[@]}"; do
           else
             .
           end
+        )
+      | .answers.delegate_answer_document.answers.extension_provider_entries |= (
+          if . == null then . else map(
+            if (.reference | type == "string") and ($pin[.reference] != null)
+            then .reference = $pin[.reference] else . end
+          ) end
+        )
+      | .answers.delegate_answer_document.answers.extension_providers |= (
+          if . == null then . else map(
+            if type == "string" and ($pin[.] != null) then $pin[.] else . end
+          ) end
         )
     ' "$source_answers" > "$temp_answers"
 
