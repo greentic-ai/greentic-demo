@@ -9,6 +9,9 @@
       "public_surface_policy": "disabled",
       "public_web_enabled": false,
       "tenant_path_policy": "pack_declared"
+    },
+    "tunnel": {
+      "mode": "cloudflared"
     }
   },
   "setup_answers": {
