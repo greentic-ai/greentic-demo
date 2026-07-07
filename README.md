@@ -214,7 +214,7 @@ Requirements:
 
 Run:
 ```bash
-gtc wizard --answers demos/agentic-research-tavily-demo-create-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/agentic-research-tavily-demo/create:latest
 gtc setup ./agentic-research-tavily-demo-bundle
 gtc start ./agentic-research-tavily-demo-bundle --cloudflared off
 ```
@@ -236,7 +236,7 @@ Requirements:
 
 Run:
 ```bash
-gtc wizard --answers demos/agentic-hubspot-crm-demo-create-answers.json
+gtc wizard --answers oci://ghcr.io/greenticai/answers/agentic-hubspot-crm-demo/create:latest
 gtc setup ./agentic-hubspot-crm-demo-bundle
 gtc start ./agentic-hubspot-crm-demo-bundle --cloudflared off
 ```
