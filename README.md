@@ -203,6 +203,51 @@ gtc setup --answers oci://ghcr.io/greenticai/answers/github-review-demo/setup:la
 gtc start ./github-review-demo-bundle
 ```
 
+### agentic-research-tavily-demo
+
+Outcome:
+- Runs an **Agentic Worker** (`dw.agent`) research assistant in WebChat: greets with an inline Adaptive Card, then answers questions by searching the live web with two Tavily tools (`tavily_search` + `tavily_extract`) and cites its sources. The agent keeps multi-turn memory in Redis, so follow-up questions work with no extra flow nodes.
+
+Requirements:
+- Redis on `127.0.0.1:6379` (`brew services start redis`) — the `dw.agent` node is disabled without it.
+- An LLM key (DeepSeek by default) and a Tavily API key (from `https://tavily.com`).
+
+Run:
+```bash
+gtc wizard --answers demos/agentic-research-tavily-demo-create-answers.json
+gtc setup ./agentic-research-tavily-demo-bundle
+gtc start ./agentic-research-tavily-demo-bundle --cloudflared off
+```
+
+`gtc setup` asks for the DeepSeek key and the Tavily API key once and stores them in the bundle; `gtc start` then needs no environment variables.
+
+Notes:
+- The Tavily tools resolve from `store.greentic.cloud` (the built-in default store).
+- For crate details and the design/build notes, see [`crates/agentic-research-tavily-demo/README.md`](crates/agentic-research-tavily-demo/README.md) and [`docs/superpowers/specs/2026-06-28-tavily-demo-adaptive-cards-design.md`](docs/superpowers/specs/2026-06-28-tavily-demo-adaptive-cards-design.md).
+
+### agentic-hubspot-crm-demo
+
+Outcome:
+- Runs an **Agentic Worker** (`dw.agent`) waiting-list assistant in WebChat: greets with an inline Adaptive Card, collects a contact's name/email/company, **confirms the fields before writing** (asks for `yes`), then creates a **HubSpot CRM contact** via the `hubspot_contacts` tool and reports the new contact id + URL.
+
+Requirements:
+- Redis on `127.0.0.1:6379` (`brew services start redis`).
+- An LLM key (DeepSeek by default) and a HubSpot connection — a Private App token (`pat-…`, scopes `crm.objects.contacts.read` + `crm.objects.contacts.write`) or an OAuth app.
+
+Run:
+```bash
+gtc wizard --answers demos/agentic-hubspot-crm-demo-create-answers.json
+gtc setup ./agentic-hubspot-crm-demo-bundle
+gtc start ./agentic-hubspot-crm-demo-bundle --cloudflared off
+```
+
+`gtc setup` asks for the DeepSeek key and the HubSpot connection (Private App token or OAuth) once and stores them in the bundle; `gtc start` then needs no environment variables.
+
+Notes:
+- The `greentic.hubspot` tool resolves from `store.greentic.cloud` (the built-in default store).
+- Using HubSpot OAuth instead of a Private App token? Pick "OAuth" during `gtc setup` and connect there.
+- For crate details and the design/build notes, see [`crates/agentic-hubspot-crm-demo/README.md`](crates/agentic-hubspot-crm-demo/README.md) and [`docs/superpowers/specs/2026-06-28-hubspot-crm-demo-design.md`](docs/superpowers/specs/2026-06-28-hubspot-crm-demo-design.md).
+
 ## Troubleshooting
 
 - **External messages (Teams/Slack/WebEx/Telegram) never arrive locally** — a
