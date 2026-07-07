@@ -215,11 +215,11 @@ Requirements:
 Run:
 ```bash
 gtc wizard --answers oci://ghcr.io/greenticai/answers/agentic-research-tavily-demo/create:latest
-gtc setup ./agentic-research-tavily-demo-bundle
-gtc start ./agentic-research-tavily-demo-bundle --cloudflared off
+gtc setup --answers oci://ghcr.io/greenticai/answers/agentic-research-tavily-demo/setup:latest ./agentic-research-tavily-demo-bundle
+gtc start ./agentic-research-tavily-demo-bundle
 ```
 
-`gtc setup` asks for the DeepSeek key and the Tavily API key once and stores them in the bundle; `gtc start` then needs no environment variables.
+`gtc setup` prompts for the DeepSeek key and the Tavily API key once and stores them in the bundle; `gtc start` then needs no environment variables.
 
 Notes:
 - The Tavily tools resolve from `store.greentic.cloud` (the built-in default store).
@@ -237,11 +237,11 @@ Requirements:
 Run:
 ```bash
 gtc wizard --answers oci://ghcr.io/greenticai/answers/agentic-hubspot-crm-demo/create:latest
-gtc setup ./agentic-hubspot-crm-demo-bundle
-gtc start ./agentic-hubspot-crm-demo-bundle --cloudflared off
+gtc setup --answers oci://ghcr.io/greenticai/answers/agentic-hubspot-crm-demo/setup:latest ./agentic-hubspot-crm-demo-bundle
+gtc start ./agentic-hubspot-crm-demo-bundle
 ```
 
-`gtc setup` asks for the DeepSeek key and the HubSpot connection (Private App token or OAuth) once and stores them in the bundle; `gtc start` then needs no environment variables.
+`gtc setup` prompts for the DeepSeek key and the HubSpot connection (Private App token or OAuth) once and stores them in the bundle; `gtc start` then needs no environment variables.
 
 Notes:
 - The `greentic.hubspot` tool resolves from `store.greentic.cloud` (the built-in default store).
