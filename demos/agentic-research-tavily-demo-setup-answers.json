@@ -14,8 +14,8 @@
   },
   "setup_answers": {
     "agentic-research-tavily-demo": {
-      "deepseek": "${GREENTIC_LLM_API_KEY}",
-      "api_key": "${TAVILY_API_KEY}"
+      "llm_deepseek": "${GREENTIC_LLM_API_KEY}",
+      "tavily_api_key": "${TAVILY_API_KEY}"
     },
     "messaging-webchat-gui": {
       "base_url": "http://127.0.0.1:8080",
@@ -37,8 +37,8 @@
     },
     "state-memory": {},
     "agentic-research-tavily-agent": {
-      "deepseek": "${GREENTIC_LLM_API_KEY}",
-      "api_key": "${TAVILY_API_KEY}"
+      "llm_deepseek": "${GREENTIC_LLM_API_KEY}",
+      "tavily_api_key": "${TAVILY_API_KEY}"
     }
   },
   "team": "default",

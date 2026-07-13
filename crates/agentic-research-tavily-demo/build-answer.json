@@ -79,6 +79,10 @@
       {
         "path": "flows/on_message.ygtc.resolve.summary.json",
         "content": "{\n  \"schema_version\": 1,\n  \"flow\": \"on_message.ygtc\",\n  \"nodes\": {\n    \"send_welcome\": { \"component_id\": \"ai.greentic.component-adaptive-card\", \"source\": { \"kind\": \"local\", \"path\": \"../components/adaptive-card/component_adaptive_card.wasm\" }, \"digest\": \"sha256:092d799a88475e9c45e48e0d24b7cfd5873d0c2d96f8b6abdfc8275c27bff656\", \"manifest\": { \"world\": \"greentic:component/component@0.6.0\", \"version\": \"0.2.0\" } },\n    \"render_answer\": { \"component_id\": \"ai.greentic.component-adaptive-card\", \"source\": { \"kind\": \"local\", \"path\": \"../components/adaptive-card/component_adaptive_card.wasm\" }, \"digest\": \"sha256:092d799a88475e9c45e48e0d24b7cfd5873d0c2d96f8b6abdfc8275c27bff656\", \"manifest\": { \"world\": \"greentic:component/component@0.6.0\", \"version\": \"0.2.0\" } }\n}\n}"
+      },
+      {
+        "path": "assets/setup.yaml",
+        "content": "title: Agentic Research (Tavily) Setup\ndescription: Credentials for the agentic worker's LLM and the Tavily search tool.\nquestions:\n  - name: llm_deepseek\n    kind: string\n    required: true\n    secret: true\n    title: DeepSeek API key\n    help: LLM credential for the agentic worker (secret-requirements key `llm/deepseek`).\n    placeholder: Enter your DeepSeek API key\n  - name: tavily_api_key\n    kind: string\n    required: false\n    secret: true\n    title: Tavily API key\n    help: Used by the greentic.tavily extension (secret-requirements key `tavily/api_key`).\n    placeholder: Enter your Tavily API key\n"
       }
     ]
   }
