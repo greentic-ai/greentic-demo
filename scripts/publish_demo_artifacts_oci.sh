@@ -51,7 +51,13 @@ publish_ref() {
         echo "  -> ${ref}"
         return 0
     fi
-    if grep -qiE 'permission_denied|denied:.*write_package|insufficient_scope|requested access to the resource is denied' <<<"$out"; then
+    # GHCR does not always phrase a write denial as `permission_denied`. When the
+    # package does not exist yet, oras probes for the blob first and the registry
+    # answers the HEAD with a bare 403, e.g.
+    #   Error response from registry: HEAD ".../blobs/sha256:…": response status code 403: Forbidden
+    # which matched none of the patterns below, so the denial stayed fatal and
+    # killed the job before the release step. Match the raw 403 too.
+    if grep -qiE 'permission_denied|denied:.*write_package|insufficient_scope|requested access to the resource is denied|status code 403|403: *forbidden' <<<"$out"; then
         echo "::warning::skipping ${ref}: GHCR write denied (package not yet writable by this workflow)" >&2
         printf '%s\n' "$out" >&2
         SKIPPED_REFS+=("$ref")
