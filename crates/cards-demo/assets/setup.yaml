@@ -1,0 +1,7 @@
+# This demo pack has no secrets of its own — messaging/tool secrets are
+# configured on their provider packs. A present (empty) setup.yaml declares
+# the pack's setup surface so gtc setup's B12a fail-closed guard can classify
+# it (zero secret questions) instead of refusing to write the bundle answers.
+title: Cards
+description: No credentials required for this pack.
+questions: []
