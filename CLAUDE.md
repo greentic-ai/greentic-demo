@@ -77,7 +77,7 @@ All meaningful content lives in `build-answer.json` (wizard answers for `greenti
 
 ### Current Demo Crates
 
-18 workspace members (edition 2024, version `1.1.0-dev.0`):
+18 workspace members (edition 2024, version `1.2.0-dev.0`):
 
 | Crate | Domain |
 |-------|--------|
@@ -87,7 +87,7 @@ All meaningful content lives in `build-answer.json` (wizard answers for `greenti
 | `redbutton-demo` | Physical button + WASM components |
 | `cards-demo` | Adaptive Card showcase |
 | `cloud-deploy-demo` | Cloud deployment |
-| `github-mcp-demo` | GitHub MCP integration |
+| `github-review-demo` | GitHub code review |
 | `greentic-ai-demo` | Lead-capture multi-persona |
 | `helpdesk-itsm-demo` | IT helpdesk portal |
 | `hr-onboarding-demo` | HR onboarding |
