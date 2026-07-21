@@ -34,18 +34,19 @@ scripts/package_demos.sh
 scripts/package_demos.sh quickstart-demo
 ```
 
-Note: `ci/local_check.sh` runs offline by default (`CARGO_NET_OFFLINE=1`). Set `CARGO_NET_OFFLINE=false` if you need to fetch dependencies. It also requires `python3` and `tar` (hard requirements).
+Note: `ci/local_check.sh` runs offline by default (`CARGO_NET_OFFLINE=1`). Set `CARGO_NET_OFFLINE=false` if you need to fetch dependencies. It also requires `python3` and `tar` (hard requirements). The script overrides `CARGO_HOME` to `.cargo-home` and `CARGO_TARGET_DIR` to `.target` (both repo-local) to isolate builds from the user's global Cargo state.
 
 ### Building WASM Components
 
 WASM component sub-crates (excluded from the workspace) require separate builds:
 
+Each component directory has its own `Makefile` with targets: `build`, `wasm`, `check`, `lint`, `test`.
+Use the Makefile `wasm` target as the canonical build path:
+
 ```bash
 cd crates/redbutton-demo/component-http   # or component-random, component-betterstack-incident, greentic-http2play
-cargo component build --release --target wasm32-wasip2
+make wasm                                 # runs cargo component build, copies to dist/, updates hash
 ```
-
-Each component directory has its own `Makefile` with targets: `build`, `wasm`, `check`, `lint`, `test`.
 
 ## Architecture
 
