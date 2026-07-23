@@ -1,137 +1,158 @@
 # Webchat demo breakage — holistic root cause & fix plan
 
-_Post-mortem + consolidated fix plan for the weather-mcp-demo webchat regression
-(`http://127.0.0.1:8080/v1/web/webchat/default/`)._
+_Post-mortem + consolidated fix plan for the weather-mcp-demo / hr-onboarding
+webchat regressions (`http://127.0.0.1:8080/v1/web/webchat/default/`)._
 
 ## TL;DR
 
-The demo did not break in five random ways. **Two migrations shipped without
-finishing**, and every visible symptom falls out of one of them. The fixes group
-into exactly two coherent changesets — plus one thing that is genuinely the
-demo's own responsibility (a valid API key + an error card).
+This was never one bug. **Two migrations shipped without finishing**, and the
+fallout is **four distinct problems**. Two are fixed (A, B). Two were only
+uncovered late and are still open — and they are the ones that actually keep the
+demo from rendering a weather card:
+
+1. **Flow-engine contract breaks** on the env/revision path → **Changeset A** (fixed).
+2. **Secrets writer/reader rendezvous** → **Changeset B** (fixed).
+3. **The resolved API key never reaches the component** → **open** (real bug, proven).
+4. **`gtc start` deploys additively; deployments collide on the default route** → **open** (real bug, proven).
+
+Things we *thought* were bugs but were not: the "double card" (the user pressed
+the button twice) and "the placeholder key is the whole story" (the key is
+valid; the component just never receives it).
 
 ## Root cause
 
-### Migration 1 — the env/revision serve-path
+### Migration 1 — the env/revision serve-path (gtc #251 / greentic-start #400 family)
 
-Webchat inbound events moved off the legacy serve path onto the env/revision
-path. The new path did not honour three contract assumptions the **compiled
-packs** depend on. All three live in the **greentic-runner flow engine**:
+`gtc start <bundle>` used to boot a single, bundle-scoped server. Commit
+**`4360bdd` — feat(start): route `gtc start <bundle>` through the environment
+(B4b) (1.1.6) (#251)** rerouted it to **deploy into a shared environment**. That
+move broke three flow-engine contract assumptions the compiled packs rely on
+(→ Changeset A) **and** introduced the additive-deployment collision (→ #4).
 
-| Symptom | Broken assumption |
+### Migration 2 — the env-store secrets move (setup #226 / start #423)
+
+Secrets moved to the shared env store, but the writer and reader disagreed on
+path + env until Changeset B.
+
+## The fixes
+
+### Changeset A — restore the pack contract on the env-path (greentic-runner) — DONE
+
+Tested, PR #611 (branch `fix/messaging-entry-flow-routing`, 1.1.7). Three seams,
+each unit-covered:
+
+| Symptom | Fix |
 |---|---|
-| Blank webchat / "flow type messaging is ambiguous" | entry-flow resolution (entry vs. `internal` flows) |
-| Card rendered twice | single-emit finalization (`finalize_with` re-appended the terminal emit) |
-| Button click returns the welcome card | `in.input.*` entry shape (routing context lacked `input` alias) |
+| Blank webchat / "flow type messaging is ambiguous" | entry-flow-aware routing (`entry_flow_by_type`, `tags_indicate_entry`) |
+| Card emitted twice by the flow | `finalize_with` no longer re-appends the terminal emit |
+| Button → welcome card | `alias_input_to_entry` in `template_context` + `build_routing_context` |
 
-### Migration 2 — the env-store secrets move (`greentic-setup #226` / `greentic-start #423`)
+### Changeset B — finish the env-store secrets move (gtc + greentic-start) — DONE
 
-Secrets moved to the shared env store
-(`~/.greentic/environments/<env>/.greentic/dev/.dev.secrets.env`), but the
-orchestration around it stayed inconsistent, so the writer and reader disagreed
-on **where** and **under which env** secrets live:
+- greentic-start (`test/webchat-full-local`): `open_dev_store_manager` +
+  `dev_store_path` helpers resolve the shared env store; **T1 test** guards the
+  writer↔reader rendezvous.
+- gtc (`fix/gtc-secrets-env-pin`, off main, 1.1.9, compiles): drop the
+  `GREENTIC_DEV_SECRETS_PATH` bundle-root override; pin `GREENTIC_ENV` on the
+  setup/provider/op/wizard passthrough children.
 
-- gtc forced the runtime reader to the bundle root (a `GREENTIC_DEV_SECRETS_PATH` override)
-- gtc `setup`/`provider`/`op` did not pin `GREENTIC_ENV`, so the writer wrote under one env and the reader looked under another
-- the runtime reader (`open_dev_store_manager`) was never wired to the env store path helper
+### Dropped — `conv_dedup` rebuild
 
-## The fix — two changesets
+The visible "double" was the user pressing the button twice, not the TOCTOU race
+conv_dedup targets. Dropped (recoverable at `818a091`).
 
-### Changeset A — restore the pack contract on the env-path (greentic-runner)
+## OPEN #3 — the resolved WeatherAPI key never reaches the component
 
-Already implemented and tested (PR #611):
+**This is the real reason the weather card doesn't render — not the key, not the
+render path.** Proven, not assumed:
 
-1. entry-flow-aware routing (`entry_flow_by_type`, `tags_indicate_entry`)
-2. finalize dedup (skip re-appending when `emitted.last()` is already the terminal payload)
-3. `alias_input_to_entry` applied in `template_context` + `build_routing_context`
+- The user's key returns full weather via a **direct curl** → the key is **valid**.
+- A reproduction test (`repro_get_weather_reply_shape`, greentic-start
+  `messaging_app.rs`) runs the real `flow_get_weather` through the real runner.
+  With a **bogus** key seeded it returns WeatherAPI **code 1002** ("not
+  provided"), **not 2006** ("invalid"). That discriminator proves the component
+  sends WeatherAPI **no key at all** — the resolved secret never reaches the
+  outbound request.
+- The live `.greentic/dev/.dev.secrets.env` was a **0-byte file** — the key was
+  never persisted there either.
 
-### Changeset B — finish the env-store secrets move (gtc + greentic-start)
+### Mechanism (traced)
 
-1. gtc: drop the `GREENTIC_DEV_SECRETS_PATH` bundle-root override
-2. gtc: pin `GREENTIC_ENV` on secret-touching child spawns (`setup`/`provider`/`op`/`wizard`) via `pinned_env_for_children` + `resolve_env_id`
-3. greentic-start: wire `open_dev_store_manager` to `dev_store_path::find_existing` so the reader uses the same env store the writer used
+The generated `weatherapi_current` component (greentic-mcp-generator) reads the
+key **only from a process/WASI env var**, via `apply_auth_bindings`:
 
-### Explicitly dropped — `conv_dedup` rebuild
+```
+AuthInjection::Query { name: "key" }
+sources: [ Env { MCP_SECRET_AUTH_PARAM_GET_WEATHER_KEY }, LegacyEnv { MCP_API_KEY } ]
+```
 
-The single-flight `conv_dedup` rewrite targets a browser React-double-invoke
-edge case, **not** the double you actually saw (that was Changeset A #2). It is
-separate hardening and is **not** part of this fix.
+So the host must resolve `auth.param.get_weather.key` and **inject it as the WASI
+env var `MCP_SECRET_AUTH_PARAM_GET_WEATHER_KEY`** into the component. The
+"WASM secrets read requested" log shows the host *resolves* the secret, but the
+value is not landing in that env var — so `std::env::var(...)` in the component
+returns nothing and the `key=` query param goes out empty.
 
-## What this fix does NOT do — the weather card itself
+### Where to fix / next step
 
-Even with A + B perfect, the forecast will not render unless:
+- Trace the runner's component-invocation env injection: where
+  `secret_requirements` (scope `host.secrets.required`) are turned into the
+  guest's WASI env (`MCP_SECRET_*`). Confirm the resolved value is actually set
+  on the guest env, with the correct name derivation
+  (`secret_key_env_var`: `MCP_SECRET_` + upper(key)).
+- **Harness caveat:** the in-process `run_app_flow` / `run_pack_with_options`
+  path does **not** provision `host.secrets.required` (a provider/gateway layer
+  only runs in the full `gtc` server), so the repro test can prove the *no-key*
+  failure but cannot render a card even with a valid key. A true green proof
+  needs the full server boot (see T2).
 
-- a **valid WeatherAPI key** is provisioned (the placeholder 401s), and
-- ideally the **weatherapi-pack** flow gains an `err_map` so a failed fetch
-  renders an **error card** instead of falling through to the webchat
-  "universal payload" fallback.
+## OPEN #4 — additive deployment collision
 
-`flow_get_weather` today is `call_weather -> render`, with **no `err_map`**. On a
-401 the render node tries to build the *success* card from missing data and
-produces no `renderedCard`, so the reply classifier (which only recognises
-`renderedCard`) emits the generic "universal payload". That is a demo-pack
-concern (this repo), not a runtime bug.
+`gtc start <bundle>` (post-#251) **adds** a deployment to the shared env and never
+supersedes. `env local` accumulated **three** deployments (weather-mcp-demo,
+quickstart-demo, hr-onboarding-demo), all at `weight_bps: 10000`, all claiming
+`/v1/web/webchat/default/`. First-deployed (weather) wins — which is why starting
+hr-onboarding still showed the weather card.
 
-## Regression tests — make a future migration break the build, not the demo
+### Follow-ups
 
-The real defect is process: **nothing exercised the two contracts end-to-end**,
-so both migrations shipped green and broke silently in the browser. The fix is
-two hermetic, isolated happy-path tests — one per migration — that mock every
-external system. If either contract regresses again, `cargo test` (and CI) fails
-early instead of a human noticing a blank webchat.
+1. **Make `gtc start <bundle>` supersede** prior deployments on the shared route
+   (or scope each bundle to a distinct route/tenant) instead of piling up.
+2. **Implement `gtc op env destroy`** for real. It is "not yet implemented" in
+   the published 1.1.x operator/deployer; the locally checked-out operator
+   (0.4.48) has no destroy verb at all, so this needs the published source tree +
+   a toolchain release.
+3. **Interim tool (shipped):** `scripts/gtc-env-nuke <env> [--purge] [--yes]` —
+   stops the runtime, moves the env to a timestamped `.bak` (reversible), and
+   only hard-deletes with `--purge`. Reproducible, safe replacement for hand
+   `mv`/`rm`.
 
-### T1 — `setup` secret round-trip (Changeset B contract)
+## Regression tests — make a migration break the build, not the demo
 
-Proves the **writer and reader agree on path + env**.
+The root process failure: nothing exercised these contracts end-to-end.
 
-- **Isolate:** point the greentic home root at a tempdir; `GREENTIC_ENV=local`.
-- **Act:** run the setup writer to store `weatherapi_pack/auth_param_get_weather_key`.
-- **Assert:** the runtime reader (`open_dev_store_manager`, same env) reads the
-  value back — i.e., the file lands in the shared env store and the reader looks
-  there. Fails the moment writer/reader paths diverge again.
-- **Mocks:** none external — filesystem only (tempdir home). No network, no prompts.
-- **Home:** greentic-start (`dev_store_path` + `secrets_gate`), where both writer
-  helpers and the reader live.
-
-### T2 — `start` webchat happy-path (Changeset A contract)
-
-Proves **entry-flow routing + single reply + `in.input` on button submit**.
-
-- **Isolate:** load a fixture pack — an entry `welcome` flow + one `operation`
-  flow — with the weather component replaced by a deterministic **stub** (no HTTP,
-  no key).
-- **Act 1:** POST a webchat message activity → assert **exactly one** reply and it
-  carries a `renderedCard` (entry-flow routing + no double-emit).
-- **Act 2:** POST an `Action.Submit` whose `value.operation` selects the operation
-  flow → assert it routes there and `in.input.metadata.operation` is populated
-  (i.e., it is NOT the welcome card again).
-- **Mocks:** the external weather component is a stub → no API key / network.
-- **Home:** greentic-start serve-path integration (or runner host), so it covers
-  the whole `start` inbound→reply path, not just engine units.
-
-**Reality check (from a scaffolding audit):** Changeset A's three contract seams
-are *already* unit-tested in PR #611 — `entry_flow_by_type` (routing),
-`finalize`'s no-double-emit, and `alias_input_to_entry` (button `in.input`
-metadata) — plus `messaging_app::parse_envelopes` (renderedCard → adaptive card).
-So the individual broken contracts are covered. What is NOT covered is the
-**full serve-path round-trip**, and that is genuinely heavy: `run_app_flow`
-executes the real wasmtime runner and there is **no in-process stub-component
-seam** (`packs: Vec<Arc<PackRuntime>>` is concrete). A true POST→reply e2e
-therefore needs a real WASM component fixture pack — a larger follow-up, not a
-quick unit test. T2 is deferred as that WASM-fixture e2e; the contract-level
-guards already stand.
-
-Both T1 and the existing contract tests are plain `cargo test` targets so they
-gate every PR.
+- **T1 — setup env-store rendezvous** (greentic-start): implemented + passing,
+  ships with Changeset B. Guards writer↔reader path/env agreement.
+- **Reproduction test — `repro_get_weather_reply_shape`** (greentic-start): dual
+  mode. Without `WEATHERAPI_TEST_KEY` it asserts the known auth-error shape
+  (green in CI); with it, it seeds the key and asserts a rendered card. Currently
+  reproduces OPEN #3 (no key reaches the component). Uses the 1002-vs-2006
+  discriminator.
+- **Changeset A seams** (greentic-runner): `entry_flow_by_type`, finalize
+  no-double, `alias_input_to_entry`, `parse_envelopes` — already unit-covered.
+- **T2 — full serve-path webchat e2e — TODO.** The only way to prove #3's fix
+  and the render path end-to-end. Needs the full `gtc` server boot (the
+  provider/gateway layer that injects `host.secrets.required`), or a WASM
+  component fixture — not the minimal in-process runner path.
 
 ## Status
 
-- [x] Changeset A — done, tested (PR #611); its 3 contract seams are unit-covered
-- [x] Changeset B — done (greentic-start branch `test/webchat-full-local`; gtc on
-      `fix/gtc-secrets-env-pin` off main, compiles, v1.1.9)
-- [x] conv_dedup — dropped (recoverable at `818a091` if ever needed)
-- [x] **T1 — setup env-store rendezvous test** — implemented + passing, shipped
-      with the changeset-B secrets commit
-- [ ] **T2 — full serve-path webchat e2e** — deferred; needs a WASM component
-      fixture pack (contract seams already unit-covered)
-- [ ] weather-pack `err_map` + valid key — demo-side follow-up
+- [x] Changeset A — routing + finalize + `in.input`; unit-tested; PR #611
+- [x] Changeset B — secrets rendezvous (gtc `fix/gtc-secrets-env-pin` 1.1.9 +
+      greentic-start `test/webchat-full-local`); T1 passing
+- [x] conv_dedup — dropped (double was a double-press)
+- [x] `gtc-env-nuke` interim teardown tool — committed
+- [ ] **OPEN #3 — key→component env injection** — the real card blocker; trace
+      the runner's `MCP_SECRET_*` WASI-env injection for `host.secrets.required`
+- [ ] **OPEN #4a — `gtc start` supersede** prior deployments on the shared route
+- [ ] **OPEN #4b — implement `gtc op env destroy`** (published operator + release)
+- [ ] **T2 — full serve-path e2e** — the green proof for #3
