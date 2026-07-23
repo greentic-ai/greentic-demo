@@ -173,6 +173,39 @@ resolves to the app pack's flow and excludes messaging-provider-pack flows (filt
 ingress). Real change in greentic-runner `host.rs`/`engine.rs`, on top of
 Changeset A, with new tests. **In progress.**
 
+## Env-path parity plan — finishing the migration (not reverting it)
+
+The env/revision path is the **target architecture** and stays. B4b (#251) plus
+the A.2–A.5 surface work (#378–#382: revision-scoped static assets, DirectLine,
+WebSocket, CORS) deliberately replaced the legacy bundle-scoped ingress. The
+legacy `messaging_app::run_app_flow` is the **reference for behavior**, not the
+implementation to restore. It did four things at inbound-message time; the env
+path (`revision_serve::run_provider_inbound_pipeline` →
+`RunnerHost::handle_activity_for_revision` → `dispatch_activity`) needs each one
+sourced **env-path-natively** (env store + revision model), never from the legacy
+`bundle/state/config/*.json` layout — which does not exist on this path.
+
+| # | `run_app_flow` behavior (reference) | Env-path status | Env-path-native completion |
+|---|---|---|---|
+| 1 | Resolve + pass explicit `(pack_id, flow_id)` | type-only routing; ambiguous in multi-provider bundles | **DONE** — `entry_flow_by_type` excludes `messaging.*` provider-pack flows (`5d5b8f5…`). Optional hardening: thread the app `(pack_id, flow_id)` the endpoint binding already knows (`WelcomeFlowHint` carries it) for fully deterministic routing. |
+| 2 | `inject_pack_setup_answers` — pack config → envelope metadata | not wired; **`setup-answers.json` doesn't exist on the env path** | Re-source the pack's applied config from the **env store** at `dispatch_activity` time and inject into the entry metadata. Do NOT read the legacy bundle file. |
+| 3 | Secret delivery (`AuthSource::Input` + host fn) | component calls `secrets_store::get` but at the **wrong scope** (setup wrote tenant `demo`; component reads the deployment's runtime tenant, logged `default`) → WeatherAPI 1002 | Fix the secret **read scope** so `secrets_store::get` resolves at the deployment's runtime `env/tenant/team`. This is Vlad's native path (host fn over the env store) — the fix is scope alignment, not metadata injection. Closes **OPEN #3**. |
+| 4 | `routeToCardId`/`nextCardId` + Waiting/resume for multi-turn card flows | flow `main` re-runs fresh each event → `welcome_card.json`; no `Waiting`/resume in the log | Ensure the env-path session/resume key matches between the render-and-pause turn and the button turn, so the flow resumes at "awaiting user submit" and `routeToCardId` selects the next card instead of re-rendering welcome. |
+
+### Sequencing
+
+0. **DIAG (unblock diagnosis):** log the resolved `(pack_id, flow_id)` + entry
+   metadata keys in `dispatch_activity`, so we can see whether `routeToCardId`
+   reaches the flow. Pins whether #4 is a provider-ingest, activity-build, or
+   resume problem before writing the fix.
+1. **#4 — routeToCardId/resume** (the visible button→welcome bug).
+2. **#3 — secret read scope** (the weather card / OPEN #3).
+3. **#2 — config injection from the env store** (only if a gap remains after #3).
+4. **#1 hardening** — deterministic app-pack threading (optional).
+
+Each step is env-path-native and additive to the A.2–A.5 / B4b work — the goal is
+parity with the legacy behavior, implemented in the new model.
+
 ## Regression tests — make a migration break the build, not the demo
 
 The root process failure: nothing exercised these contracts end-to-end.
