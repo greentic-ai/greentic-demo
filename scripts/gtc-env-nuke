@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+# gtc-env-nuke — safely tear down a local greentic environment.
+#
+# The env/revision migration (gtc #251) makes every `gtc start <bundle>` deploy
+# ADDITIVELY into a shared env (`local`), and stale deployments never leave — so
+# multiple bundles collide on `/v1/web/webchat/default/`. `gtc op env destroy` is
+# still "not yet implemented" upstream, so this is the safe, reproducible cleanup
+# until it lands.
+#
+# Usage:
+#   gtc-env-nuke <env> [--purge] [--yes]
+#     <env>     environment id (e.g. local)                     [required]
+#     --purge   delete the timestamped backup immediately        [default: keep]
+#     --yes     skip the confirmation prompt (for scripts)
+#
+# What it does (in order):
+#   1. stops any running greentic-start / gtc start (so nothing writes mid-nuke)
+#   2. MOVES ~/.greentic/environments/<env> to <env>.bak-<timestamp> (reversible)
+#   3. with --purge, removes that backup too
+#
+# Reversible by default: without --purge, restore with
+#   mv ~/.greentic/environments/<env>.bak-<ts> ~/.greentic/environments/<env>
+set -euo pipefail
+
+ENV_ID="${1:-}"
+if [ -z "$ENV_ID" ] || [ "$ENV_ID" = "-h" ] || [ "$ENV_ID" = "--help" ]; then
+  sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+  exit 2
+fi
+shift || true
+
+PURGE=0
+YES=0
+for arg in "$@"; do
+  case "$arg" in
+    --purge) PURGE=1 ;;
+    --yes | -y) YES=1 ;;
+    *) echo "gtc-env-nuke: unknown argument '$arg'" >&2; exit 2 ;;
+  esac
+done
+
+ROOT="${GREENTIC_HOME:-$HOME/.greentic}/environments"
+TARGET="$ROOT/$ENV_ID"
+
+if [ ! -d "$TARGET" ]; then
+  echo "gtc-env-nuke: env '$ENV_ID' not found at $TARGET — nothing to do"
+  exit 0
+fi
+
+# Show what will be nuked so the confirmation is informed.
+echo "Environment to nuke: $ENV_ID"
+echo "  path: $TARGET"
+if [ -d "$TARGET/revisions" ]; then
+  echo "  revisions: $(find "$TARGET/revisions" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l | tr -d ' ')"
+fi
+[ "$PURGE" = 1 ] && echo "  --purge: backup will be DELETED (not recoverable)"
+
+if [ "$YES" != 1 ]; then
+  printf "Type the env id '%s' to confirm: " "$ENV_ID"
+  read -r reply
+  if [ "$reply" != "$ENV_ID" ]; then
+    echo "aborted (got '$reply')"
+    exit 1
+  fi
+fi
+
+# 1. stop any running runtime so nothing writes into the dir while we move it.
+pkill -f "greentic-start" 2>/dev/null || true
+pkill -f "gtc start" 2>/dev/null || true
+sleep 1
+
+# 2. move aside (reversible).
+TS="$(date +%Y%m%d-%H%M%S)"
+BAK="$ROOT/${ENV_ID}.bak-$TS"
+mv "$TARGET" "$BAK"
+echo "moved $TARGET -> $BAK"
+
+# 3. optional purge.
+if [ "$PURGE" = 1 ]; then
+  rm -rf "$BAK"
+  echo "purged $BAK"
+else
+  echo "backup kept at $BAK"
+  echo "  restore: mv \"$BAK\" \"$TARGET\""
+  echo "  delete:  rm -rf \"$BAK\"   (or re-run with --purge)"
+fi
+
+echo "done — redeploy with: gtc start <your-bundle>"
