@@ -61,49 +61,66 @@ each unit-covered:
 The visible "double" was the user pressing the button twice, not the TOCTOU race
 conv_dedup targets. Dropped (recoverable at `818a091`).
 
-## OPEN #3 — the resolved WeatherAPI key never reaches the component
+## OPEN #3 — the WeatherAPI key is not provisioned where the component reads it
 
-**This is the real reason the weather card doesn't render — not the key, not the
-render path.** Proven, not assumed:
+**Not a component, generator, or render bug — a secrets provisioning/scope
+rendezvous.** The weather card fails because the key isn't in the store, at the
+URI, the component's secrets host-function looks up. Proven:
 
 - The user's key returns full weather via a **direct curl** → the key is **valid**.
-- A reproduction test (`repro_get_weather_reply_shape`, greentic-start
-  `messaging_app.rs`) runs the real `flow_get_weather` through the real runner.
-  With a **bogus** key seeded it returns WeatherAPI **code 1002** ("not
-  provided"), **not 2006** ("invalid"). That discriminator proves the component
-  sends WeatherAPI **no key at all** — the resolved secret never reaches the
-  outbound request.
-- The live `.greentic/dev/.dev.secrets.env` was a **0-byte file** — the key was
-  never persisted there either.
+- Reproduction test (`repro_get_weather_reply_shape`, greentic-start
+  `messaging_app.rs`): the real `flow_get_weather` returns WeatherAPI **code 1002**
+  ("not provided"), **not 2006** ("invalid") → the component sends WeatherAPI
+  **no key at all**.
+- The live `.greentic/dev/.dev.secrets.env` was a **0-byte file** — empty store.
 
-### Mechanism (traced)
+### What the deployed component actually does (verified from the wasm)
 
-The generated `weatherapi_current` component (greentic-mcp-generator) reads the
-key **only from a process/WASI env var**, via `apply_auth_bindings`:
+Earlier hypothesis (stale component / missing `SecretStore` source) was **wrong**.
+The deployed `weatherapi_current.component.wasm` (built May 15) **imports
+`greentic:secrets-store/secrets-store@1.0.0` and calls `get`**, and carries the
+secret key string `auth.param.get_weather.key`. So its `apply_auth_bindings`
+resolution order is:
 
 ```
-AuthInjection::Query { name: "key" }
-sources: [ Env { MCP_SECRET_AUTH_PARAM_GET_WEATHER_KEY }, LegacyEnv { MCP_API_KEY } ]
+SecretStore { key: "auth.param.get_weather.key" }   # host fn — the working path
+  -> Env { MCP_SECRET_AUTH_PARAM_GET_WEATHER_KEY }
+  -> LegacyEnv { MCP_API_KEY }
 ```
 
-So the host must resolve `auth.param.get_weather.key` and **inject it as the WASI
-env var `MCP_SECRET_AUTH_PARAM_GET_WEATHER_KEY`** into the component. The
-"WASM secrets read requested" log shows the host *resolves* the secret, but the
-value is not landing in that env var — so `std::env::var(...)` in the component
-returns nothing and the `key=` query param goes out empty.
+It correctly asks the runtime via the host function (that is the "WASM secrets
+read requested uri=…" log). The host returned **empty**, so it fell through to
+the unset env vars and sent an empty `key=` param → 1002.
 
-### Where to fix / next step
+### Why the host returns empty — the real gap
 
-- Trace the runner's component-invocation env injection: where
-  `secret_requirements` (scope `host.secrets.required`) are turned into the
-  guest's WASI env (`MCP_SECRET_*`). Confirm the resolved value is actually set
-  on the guest env, with the correct name derivation
-  (`secret_key_env_var`: `MCP_SECRET_` + upper(key)).
-- **Harness caveat:** the in-process `run_app_flow` / `run_pack_with_options`
-  path does **not** provision `host.secrets.required` (a provider/gateway layer
-  only runs in the full `gtc` server), so the repro test can prove the *no-key*
-  failure but cannot render a card even with a valid key. A true green proof
-  needs the full server boot (see T2).
+The key is not present at the exact URI the component reads:
+`secrets://<env>/<tenant>/<team>/weatherapi-pack/auth_param_get_weather_key`.
+Two contributing factors:
+
+1. **Empty/wiped store** — the dev store the host reads had no key (0 bytes).
+2. **Tenant scope mismatch** — the secret's scope is `{env: runtime, tenant:
+   runtime}`, so the component reads under the *deployment's* runtime tenant. The
+   host logged the read at tenant `default`, but `gtc setup` persisted secrets
+   under tenant `demo` (`[secrets] scope: env=local, tenant=demo`). Writer and
+   component-reader disagree on tenant → miss → empty.
+
+This is Changeset B's rendezvous problem, one level deeper: not just writer↔
+`open_dev_store_manager`, but writer↔**the component's `secrets_store` host
+lookup** (env + tenant + team + pack + key must all line up).
+
+### Fix / next step
+
+- Provision the key at the **exact** URI the component's host lookup uses —
+  matching the deployment's runtime **env + tenant + team**. Confirm the
+  deployment's runtime tenant/team, then `op secrets put` there (not a different
+  tenant).
+- Verify on the **live full server** with the 1002→render discriminator (a valid
+  key reaching the component renders the card; a wrong tenant still 1002).
+- **Harness caveat:** the in-process `run_app_flow` path does **not** provision
+  the `host.secrets.required` lookup the way the full server does, so the repro
+  test proves the *no-key* failure but cannot render even with a valid key seeded.
+  A true green proof needs the full server boot (see T2).
 
 ## OPEN #4 — additive deployment collision
 
