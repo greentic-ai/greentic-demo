@@ -35,11 +35,17 @@ Pack's applied setup config reaches the flow's entry metadata (legacy read
 - [ ] Unit test — a secret written under the deployment tenant is read back by the component's scope (the 1002-vs-2006 discriminator)
 - [ ] E2E stage 4 — weather action with a mocked 200 renders the forecast card (not the `service_auth`/1002 error)
 
-### F4 — `routeToCardId` + resume for multi-turn card flows
-Button turn **resumes** the paused flow and selects the routed card instead of
-re-running fresh to the welcome card.
-- [ ] Impl — env-path session/resume key matches the render-and-pause turn and the button turn
-- [ ] Unit test — a paused flow resumes on the next activity and honors `routeToCardId`/`nextCardId`
+### F4 — `routeToCardId` card selection  ✅ IMPLEMENTED
+The card node selects its card from a `routeToCardId`/`toCardId`/`nextCardId` on
+the flow entry — the flow re-runs and renders the routed card. No resume needed
+(the earlier "resume" hypothesis was wrong) and no host-side bypass (the legacy
+shortcut is replaced by in-flow selection).
+- [x] Impl — `inject_card_route` sets the adaptive-card node's `card_spec.asset_path`
+      from `routeToCardId` inside the flow so `promote_card_config_to_invocation`
+      keeps it and `resolve_card_assets` inlines it (greentic-runner `554f3a8…`).
+      Verified live: button → employee_form card, welcome load → welcome.
+- [ ] Unit test — routeToCardId present → routed asset; absent → default (welcome);
+      non-adaptive-card node or explicit `card_spec` → untouched
 - [ ] E2E stage 2 — button submit `{routeToCardId: X}` yields card X, not welcome
 
 ### F0 — DIAG (temporary, diagnostic)
@@ -73,9 +79,10 @@ webchat.
 ---
 
 ## Status rollup
-- [x] F1 — implemented + unit-tested
+- [x] F1 — multi-provider routing — implemented + unit-tested
+- [x] F4 — routeToCardId card selection — implemented + live-verified (unit/e2e pending)
+- [ ] F3 — secret read-scope (OPEN #3) — **next**
 - [ ] F2 — config injection (env store)
-- [ ] F3 — secret read-scope (OPEN #3)
-- [ ] F4 — routeToCardId + resume
-- [ ] F0 — DIAG (in-flight; temporary)
+- [x] F0 — DIAG — served its purpose (F4); removed from source
 - [ ] **E2E journey test** — built incrementally; green only when F1–F4 all pass
+- [ ] Unit tests for F4 (per "implement first, tests later")
