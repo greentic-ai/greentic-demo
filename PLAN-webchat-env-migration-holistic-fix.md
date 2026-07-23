@@ -6,14 +6,16 @@ webchat regressions (`http://127.0.0.1:8080/v1/web/webchat/default/`)._
 ## TL;DR
 
 This was never one bug. **Two migrations shipped without finishing**, and the
-fallout is **four distinct problems**. Two are fixed (A, B). Two were only
-uncovered late and are still open — and they are the ones that actually keep the
-demo from rendering a weather card:
+fallout is **five distinct problems**. Two are fixed (A, B); three were uncovered
+late and are still open — and they are the ones that actually keep a demo from
+rendering:
 
 1. **Flow-engine contract breaks** on the env/revision path → **Changeset A** (fixed).
 2. **Secrets writer/reader rendezvous** → **Changeset B** (fixed).
-3. **The resolved API key never reaches the component** → **open** (real bug, proven).
-4. **`gtc start` deploys additively; deployments collide on the default route** → **open** (real bug, proven).
+3. **The API key isn't provisioned at the scope the component reads** → **open**.
+4. **`gtc start` deploys additively; deployments collide on the default route** → **open**.
+5. **Changeset A can't disambiguate multi-provider bundles** (app flow vs provider
+   flow both entry `messaging`) → **open, in progress**.
 
 Things we *thought* were bugs but were not: the "double card" (the user pressed
 the button twice) and "the placeholder key is the whole story" (the key is
@@ -143,6 +145,34 @@ hr-onboarding still showed the weather card.
    only hard-deletes with `--purge`. Reproducible, safe replacement for hand
    `mv`/`rm`.
 
+## OPEN #5 — Changeset A is insufficient for multi-provider bundles
+
+Changeset A (#1) resolved "one app pack + internal helper flows" by picking the
+single *entry* messaging flow (`entry_flow_by_type`). But a **multi-provider
+bundle** (e.g. hr-onboarding = app pack + slack/teams/telegram/webchat-gui/webex
+providers) registers **more than one** entry `messaging` flow: the app's `main`
+**and** a provider pack's `main` (observed: `messaging-teams` `main`). With ≥2
+entry flows, `entry_flow_by_type` returns `None` (engine.rs:2074) and the resolver
+bails:
+
+```
+[Error] revision_serve.rs:3961 — forwarding provider event to flow runtime failed:
+        flow type messaging is ambiguous; pack_id is required
+```
+
+Result: the webchat renders nothing. The weather demo worked only because its
+deployment had a single app pack.
+
+**Why it's a real bug:** a provider-ingress event (webchat) should resolve to the
+**app** flow; messaging **provider** packs are infrastructure and their flows
+must not compete as type-only ingress candidates.
+
+**Fix direction:** extend the entry-flow resolver so a provider-ingress event
+resolves to the app pack's flow and excludes messaging-provider-pack flows (filter
+`entry_flow_by_type` candidates by pack role, or thread the target pack from the
+ingress). Real change in greentic-runner `host.rs`/`engine.rs`, on top of
+Changeset A, with new tests. **In progress.**
+
 ## Regression tests — make a migration break the build, not the demo
 
 The root process failure: nothing exercised these contracts end-to-end.
@@ -172,4 +202,7 @@ The root process failure: nothing exercised these contracts end-to-end.
       the runner's `MCP_SECRET_*` WASI-env injection for `host.secrets.required`
 - [ ] **OPEN #4a — `gtc start` supersede** prior deployments on the shared route
 - [ ] **OPEN #4b — implement `gtc op env destroy`** (published operator + release)
+- [ ] **OPEN #5 — multi-provider entry-flow routing** — resolve provider-ingress
+      to the app flow, exclude messaging-provider-pack flows (extends Changeset A);
+      in progress
 - [ ] **T2 — full serve-path e2e** — the green proof for #3
