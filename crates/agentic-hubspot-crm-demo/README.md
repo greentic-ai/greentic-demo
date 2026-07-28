@@ -58,18 +58,27 @@ token directly against HubSpot (no broker).
 One-time prerequisite — create a **HubSpot OAuth app**
 (<https://developers.hubspot.com/docs/api/oauth-quickstart-guide>):
 
-1. In the app's **Auth** tab, register the redirect URL
-   `http://localhost:8765/api/oauth/callback` (must match exactly).
+1. Decide the callback base first (see below), then in the app's **Auth** tab
+   register `<callback-base>/api/oauth/callback` (must match exactly).
 2. Add CRM scopes: `oauth`, `crm.objects.contacts.read/write`,
    `crm.objects.companies.read/write`, `crm.objects.deals.read/write`, `tickets`.
 3. Copy the **Client ID** and **Client Secret**.
 
-Then run setup on the **fixed port** the redirect was registered with, choose
-*OAuth*, paste the Client ID/Secret, and click **Connect HubSpot**:
+The setup server binds an **ephemeral port**, so there is no fixed
+`http://localhost:8765` to register and no `--port` flag to pin one. Pin the
+callback base with `GREENTIC_SETUP_PUBLIC_BASE_URL` instead — it must be
+`https://`, and setup injects it as the OAuth redirect base:
 
 ```bash
-gtc setup --port 8765 agentic-hubspot-crm-demo-bundle
+GREENTIC_SETUP_PUBLIC_BASE_URL=https://<your-stable-host> \
+  gtc setup agentic-hubspot-crm-demo-bundle
 ```
+
+Then choose *OAuth*, paste the Client ID/Secret, and click **Connect HubSpot**.
+Without that variable the setup tunnel supplies the callback base, which changes
+per run — workable for a one-off, but you have to re-register the redirect URL
+in HubSpot each time. The **Private App token** path below needs none of this
+and is the default for a reason.
 
 A popup opens the real HubSpot consent screen; after you authorize, the form shows
 **Connected ✓** and the demo stores `secret://hubspot/auth_mode=oauth` plus the

@@ -152,7 +152,7 @@ The pack uses the following MCP tools:
 ### AWS Deployment
 
 ```bash
-gtc start ./sales-crm --deploy aws
+gtc start ./sales-crm --target aws
 ```
 
 ### Local Development

@@ -148,11 +148,14 @@ Notes:
 - You can create or manage your OpenAI API keys at `https://platform.openai.com/api-keys`.
 - If you want to use another OpenAI-compatible provider, supply that provider's compatible base URL and API key secret during `gtc setup`.
 - The preferred AWS path is `--upload-bundle s3://...`, with no extra env vars if `aws` CLI is already configured and has `s3:GetObject` / `s3:PutObject` access to that prefix.
-- If S3 upload permissions are not available yet, you can use this fallback instead:
+- If S3 upload permissions are not available yet, point the deploy at the
+  published bundle instead:
 ```bash
-export GREENTIC_DEPLOY_BUNDLE_SOURCE="https://github.com/greenticai/greentic-demo/releases/download/v0.1.74/deep-research-demo.gtbundle?ts=1778100000"
-gtc start ./deep-research-demo-bundle --target aws
+gtc start ./deep-research-demo-bundle --target aws \
+  --deploy-bundle-source https://github.com/greenticai/greentic-demo/releases/latest/download/deep-research-demo-bundle.gtbundle
 ```
+  `GREENTIC_DEPLOY_BUNDLE_SOURCE` is the environment-variable equivalent of that
+  flag if you would rather export it once.
 - The AWS setup answers still expect runtime deployment variables such as `PUBLIC_BASE_URL` and `REDIS_URL` to be supplied during setup or deploy.
 
 ### pet-daycare-demo
