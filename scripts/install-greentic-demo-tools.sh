@@ -101,4 +101,4 @@ esac
 echo ""
 echo "Next: configure + start a demo bundle, e.g.:"
 echo "  greentic-setup ./agentic-research-tavily-demo-bundle"
-echo "  greentic-start start --bundle ./agentic-research-tavily-demo-bundle --tenant demo --nats off --cloudflared off"
+echo "  greentic-start start --bundle ./agentic-research-tavily-demo-bundle --nats off --cloudflared off"

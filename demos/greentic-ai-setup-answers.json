@@ -1,6 +1,6 @@
 {
   "bundle_source": ".",
-  "env": "dev",
+  "env": "local",
   "greentic_setup_version": "1.0.0",
   "platform_setup": {
     "deployment_targets": [],
@@ -84,5 +84,5 @@
     "state-memory": {}
   },
   "team": null,
-  "tenant": "demo"
+  "tenant": "default"
 }

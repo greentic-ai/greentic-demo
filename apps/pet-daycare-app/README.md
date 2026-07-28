@@ -16,7 +16,7 @@ bundle's `packs/` directory as `pet-daycare-pack.gtpack`.
 ## Run
 
 ```bash
-greentic-start start --bundle ../pet-daycare-demo-bundle --tenant demo --team default
+greentic-start start --bundle ../pet-daycare-demo-bundle
 ```
 
 The pack opts into fast2flow at the manifest level by declaring

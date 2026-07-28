@@ -1,6 +1,6 @@
 {
-  "env": "dev",
-  "tenant": "demo",
+  "env": "local",
+  "tenant": "default",
   "team": "default",
   "platform_setup": {
     "static_routes": {
