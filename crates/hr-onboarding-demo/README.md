@@ -162,7 +162,7 @@ gtc start ./hr-onboarding --cloudflared off
 ### AWS Deployment
 
 ```bash
-gtc start ./hr-onboarding --deploy aws
+gtc start ./hr-onboarding --target aws
 ```
 
 ## License

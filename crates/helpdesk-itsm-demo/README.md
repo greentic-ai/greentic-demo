@@ -173,7 +173,7 @@ gtc start ./helpdesk-itsm --cloudflared on
 ### AWS Deployment
 
 ```bash
-gtc start ./helpdesk-itsm --deploy aws
+gtc start ./helpdesk-itsm --target aws
 ```
 
 ## License

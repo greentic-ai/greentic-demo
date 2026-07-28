@@ -11,7 +11,7 @@ It wires a global webhook event into a red button scenario that selects a random
 Testing webhook:
 
 ```bash
-curl -X POST http://127.0.0.1:8080/v1/events/ingress/webhook/demo/default \
+curl -X POST http://127.0.0.1:8080/v1/events/ingress/greentic.events.webhook/default/default \
   -H 'content-type: application/json' \
   -d '{"source":"red-button","pressed":true}'
 ```
