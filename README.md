@@ -2,11 +2,77 @@
 
 Runnable Greentic demo catalog.
 
-This repository publishes demo packs and answer documents to GHCR as OCI artifacts so you can launch each demo with the same 3-step flow:
+## Install the toolchain
+
+```bash
+cargo binstall gtc
+gtc install
+gtc doctor
+```
+
+`gtc install` resolves the stable toolchain manifest and installs every binary
+at its pinned version. Run it again whenever a new stable release lands —
+demos are only tested against the current stable lane.
+
+## Launch a demo
+
+This repository publishes demo packs and answer documents to GHCR as OCI
+artifacts, so every demo launches the same way. Either run the four steps
+yourself:
 
 1. `gtc wizard --answers oci://ghcr.io/greenticai/answers/<demo>/create:latest`
 2. `gtc setup --answers oci://ghcr.io/greenticai/answers/<demo>/setup:latest <bundle>`
 3. `gtc start <bundle>`
+
+…or chain install → wizard → setup → start with one command:
+
+```bash
+gtc up \
+  --answers       oci://ghcr.io/greenticai/answers/<demo>/create:latest \
+  --setup-answers oci://ghcr.io/greenticai/answers/<demo>/setup:latest
+```
+
+`gtc up` ends in a foreground server, exactly like `gtc start`. Both answer
+documents are required — it never guesses the second one. Setup flags
+(`--tenant`, `--team`, `--env`, `--advanced`) are **not** forwarded; run the
+steps separately if you need them. Anything after `--` goes to the start step,
+so `gtc up … -- --open-webchat` opens the browser once the listener is up.
+`--dry-run` prints every step and the resolved bundle directory without running
+anything.
+
+## Opening the chat UI
+
+Each demo serves its webchat UI from a pack, and `gtc start` prints the URLs on
+boot:
+
+```
+serving 1 revision(s) for env `local` across 1 deployment(s) on http://127.0.0.1:8080. Press Ctrl+C to stop.
+UI: http://127.0.0.1:8080/v1/web/webchat/default/ → default bundle `helpdesk-itsm-demo`
+UI: http://127.0.0.1:8080/v1/web/webchat/default/helpdesk-itsm-demo/ (default)
+```
+
+The URL grammar is `/v1/web/webchat/{tenant}[/{bundle}[/{flow}]]/`:
+
+| URL | Resolves to |
+|-----|-------------|
+| `/v1/web/webchat/default/` | the environment's default bundle |
+| `/v1/web/webchat/default/<bundle>/` | that bundle specifically |
+| `/v1/web/webchat/default/<bundle>/<flow>/` | one flow inside that bundle |
+
+The tenant segment is required. Bundles that ship no webchat UI pack are called
+out rather than silently omitted:
+
+```
+no webchat UI pack in bundle(s) hr-chat — messaging endpoints only, no browser URL
+```
+
+`GET /chat` redirects to the default bundle's webchat URL whenever a pack
+provides the UI; the built-in console is only served when none does. Pass
+`--open-webchat` to `gtc start` to open the default bundle in your browser, or
+`--open-webchat=<bundle-id>` for a specific one.
+
+To add a messaging provider to a running environment without rebuilding the
+bundle, use `gtc provider add|list|remove`.
 
 ## Available Demos
 
@@ -23,6 +89,23 @@ gtc wizard --answers oci://ghcr.io/greenticai/answers/quickstart/create:latest
 gtc setup --answers oci://ghcr.io/greenticai/answers/quickstart/setup:latest ./quickstart-demo-bundle
 gtc start ./quickstart-demo-bundle
 ```
+
+### quickstart-event
+
+Outcome:
+- Runs the four Greentic event providers side by side — webhook ingress, cron
+  timer, SendGrid email, and Twilio SMS.
+
+Run:
+```bash
+gtc wizard --answers oci://ghcr.io/greenticai/answers/quickstart-event/create:latest
+gtc setup --answers oci://ghcr.io/greenticai/answers/quickstart-event/setup:latest ./quickstart-event-demo-bundle
+gtc start ./quickstart-event-demo-bundle --ngrok on
+```
+
+Email and SMS need provider credentials (`sendgrid_api_key` / `from_email`,
+`account_sid` / `auth_token` / `from_number`); webhook and timer need none. See
+[`crates/quickstart-event-demo/README.md`](crates/quickstart-event-demo/README.md).
 
 ### hr-onboarding
 
