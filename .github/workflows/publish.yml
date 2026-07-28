@@ -235,12 +235,17 @@ jobs:
       # Authenticated pulls use the workflow's GITHUB_TOKEN quota and pick
       # up creds from ~/.docker/config.json written by `oras login` above.
       - name: Install gtc
-        # Pin the stable toolchain release. A bare `gtc install` resolves the
-        # `latest` channel, which currently ships greentic-pack 1.1.0-dev — that
-        # build neither compiles the `agents:` block from pack.yaml nor bundles
-        # `assets/setup.yaml`, so demo packs ship without their AgentConfig or
-        # B12a setup metadata. Release 1.1.2 pins greentic-pack 1.1.4, which does.
-        run: cargo binstall -y gtc && gtc install --release 1.1.2
+        # Pin the stable toolchain release explicitly rather than relying on a
+        # bare `gtc install`, so a CI run is reproducible and moves only when
+        # this line moves.
+        #
+        # 1.1.13 pins greentic-pack 1.1.5, which compiles the `agents:` block
+        # from pack.yaml and bundles `assets/setup.yaml` — the two things demo
+        # packs need for their AgentConfig and B12a setup metadata. (The older
+        # 1.1.2 pin here was chosen for the same reason, back when the `latest`
+        # channel still resolved a greentic-pack 1.1.0-dev build that did
+        # neither. `latest`, `stable` and `1.1.13` are one digest today.)
+        run: cargo binstall -y gtc && gtc install --release 1.1.13
 
       - name: Package demos
         run: scripts/package_demos.sh
