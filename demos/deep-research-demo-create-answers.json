@@ -16,11 +16,6 @@
             "policy": "public",
             "rule_path": "deep-research-demo",
             "tenant": "default"
-          },
-          {
-            "policy": "public",
-            "rule_path": "deep-research-demo",
-            "tenant": "demo"
           }
         ],
         "advanced_setup": false,

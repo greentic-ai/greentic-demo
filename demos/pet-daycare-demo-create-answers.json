@@ -16,11 +16,6 @@
             "policy": "public",
             "rule_path": "pet-daycare-pack",
             "tenant": "default"
-          },
-          {
-            "policy": "public",
-            "rule_path": "pet-daycare-pack",
-            "tenant": "demo"
           }
         ],
         "advanced_setup": false,

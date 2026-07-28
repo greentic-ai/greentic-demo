@@ -16,11 +16,6 @@
             "policy": "public",
             "rule_path": "agentic-research-tavily-demo",
             "tenant": "default"
-          },
-          {
-            "policy": "public",
-            "rule_path": "agentic-research-tavily-demo",
-            "tenant": "demo"
           }
         ],
         "advanced_setup": false,

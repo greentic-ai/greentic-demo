@@ -16,11 +16,6 @@
             "policy": "public",
             "rule_path": "agentic-hubspot-crm-demo",
             "tenant": "default"
-          },
-          {
-            "policy": "public",
-            "rule_path": "agentic-hubspot-crm-demo",
-            "tenant": "demo"
           }
         ],
         "advanced_setup": false,
