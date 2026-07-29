@@ -184,23 +184,29 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           SHA: ${{ github.sha }}
           PUBLISH_VERSION: ${{ needs.resolve-version.outputs.publish_version }}
+          # GHCR links a package to a repository from this annotation. Without
+          # it a brand-new package is created unlinked, which makes it
+          # unwritable by any repository's GITHUB_TOKEN on every later push and
+          # leaves it private to anonymous pulls.
+          SOURCE_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
           set -euo pipefail
+          source_annotation="org.opencontainers.image.source=${SOURCE_REPO_URL}"
           while IFS= read -r pack_dir; do
             pack_name="$(basename "$pack_dir" .pack)"
             echo "Publishing ${pack_name}..."
             cd "$pack_dir"
             sha_ref="ghcr.io/${OWNER}/packs/apps/${pack_name}:${SHA}"
-            oras push "$sha_ref" .
+            oras push --annotation "$source_annotation" "$sha_ref" .
             echo "  -> ${sha_ref}"
             if [[ -n "${PUBLISH_VERSION}" ]]; then
               version_ref="ghcr.io/${OWNER}/packs/apps/${pack_name}:${PUBLISH_VERSION}"
-              oras push "$version_ref" .
+              oras push --annotation "$source_annotation" "$version_ref" .
               echo "  -> ${version_ref}"
             fi
             if [[ "${GITHUB_REF_TYPE}" == "tag" || "${GITHUB_REF_NAME}" == "main" || "${GITHUB_REF_NAME}" == "master" ]]; then
               latest_ref="ghcr.io/${OWNER}/packs/apps/${pack_name}:latest"
-              oras push "$latest_ref" .
+              oras push --annotation "$source_annotation" "$latest_ref" .
               echo "  -> ${latest_ref}"
             fi
             cd - > /dev/null
@@ -300,6 +306,17 @@ jobs:
           PUBLISH_VERSION: ${{ needs.resolve-version.outputs.publish_version }}
           PUBLISH_BUNDLES: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_bundles == true && '1' || '0' }}
         run: scripts/publish_demo_artifacts_oci.sh
+
+      # Pushing and anonymous pulling are different permissions, so a green
+      # publish step says nothing about whether users can actually resolve
+      # `gtc wizard --answers oci://…`. Check that separately, unauthenticated.
+      # Only meaningful on the branch that owns the :latest tag.
+      - name: Verify answers artifacts are anonymously pullable
+        if: steps.artifacts.outputs.found == 'true' && (github.ref_name == 'main' || github.ref_name == 'master')
+        env:
+          OWNER: ${{ github.repository_owner }}
+          TAG: latest
+        run: scripts/verify_public_answer_refs.sh
 
       - name: Upload pack refs
         if: steps.artifacts.outputs.found == 'true'

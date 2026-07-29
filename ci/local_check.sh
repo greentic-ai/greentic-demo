@@ -38,6 +38,9 @@ cargo --version
 step "demo answer URLs"
 python3 scripts/test_demo_json_remote_urls.py
 
+step "OCI publish scripts"
+bash scripts/test_publish_demo_oci_scripts.sh
+
 step "cargo metadata"
 cargo metadata --format-version 1 --no-deps >/dev/null
 

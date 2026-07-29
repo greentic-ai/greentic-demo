@@ -9,6 +9,10 @@ OWNER="${OWNER:?OWNER is required}"
 TAG="${TAG:-}"
 PUBLISH_LATEST="${PUBLISH_LATEST:-0}"
 ANSWER_HELPER="$ROOT_DIR/scripts/lib/demo_answer_artifacts.py"
+# See publish_demo_artifacts_oci.sh: GHCR links a package to a repository from
+# this annotation, and an unlinked package is neither writable by CI nor
+# publicly pullable.
+SOURCE_REPO_URL="${SOURCE_REPO_URL:-https://github.com/${GITHUB_REPOSITORY:-${OWNER}/greentic-demo}}"
 
 require_command() {
     local command_name="$1"
@@ -76,7 +80,9 @@ for row in "${answer_rows[@]}"; do
     for tag in "${publish_tags[@]}"; do
         ref="ghcr.io/${OWNER}/answers/${demo}/${artifact}:${tag}"
         echo "Publishing ${answer_file} -> ${ref}"
-        oras push --disable-path-validation --artifact-type "$media_type" "$ref" "${answer_file}:${media_type}"
+        oras push --disable-path-validation \
+            --annotation "org.opencontainers.image.source=${SOURCE_REPO_URL}" \
+            --artifact-type "$media_type" "$ref" "${answer_file}:${media_type}"
         echo "${demo}_${artifact}_${tag}=oci://${ref}" >> "$ARTIFACTS_DIR/answer-refs.txt"
         echo "oci://${ref}"
         published=1

@@ -14,6 +14,11 @@ PUBLISH_VERSION="${PUBLISH_VERSION:-}"
 PUBLISH_BUNDLES="${PUBLISH_BUNDLES:-0}"
 ANSWER_HELPER="$ROOT_DIR/scripts/lib/demo_answer_artifacts.py"
 PACK_MEDIA_TYPE="application/vnd.greentic.gtpack.v1+zip"
+# GHCR links a package to a repository from this annotation. Without it a
+# brand-new package is created unlinked, which makes it unwritable by any
+# repository's GITHUB_TOKEN on every later push and leaves it private, so
+# `gtc wizard --answers oci://…` cannot pull it anonymously.
+SOURCE_REPO_URL="${SOURCE_REPO_URL:-https://github.com/${GITHUB_REPOSITORY:-${OWNER}/greentic-demo}}"
 
 require_command() {
     local command_name="$1"
@@ -47,7 +52,9 @@ publish_ref() {
     local media_type="$3"
     local out
 
-    if out=$(oras push --disable-path-validation --artifact-type "$media_type" "$ref" "${file}:${media_type}" 2>&1); then
+    if out=$(oras push --disable-path-validation \
+        --annotation "org.opencontainers.image.source=${SOURCE_REPO_URL}" \
+        --artifact-type "$media_type" "$ref" "${file}:${media_type}" 2>&1); then
         echo "  -> ${ref}"
         return 0
     fi
@@ -142,9 +149,13 @@ else
 fi
 
 if [ ${#SKIPPED_REFS[@]} -gt 0 ]; then
-    echo "::warning::${#SKIPPED_REFS[@]} artifact ref(s) skipped due to GHCR write denial:"
+    echo "::error::${#SKIPPED_REFS[@]} artifact ref(s) skipped due to GHCR write denial:" >&2
     for ref in "${SKIPPED_REFS[@]}"; do
-        echo "  - ${ref}"
+        echo "  - ${ref}" >&2
     done
-    echo "Grant the workflow write access to these GHCR packages to publish them."
+    echo "Grant the workflow write access to these GHCR packages to publish them." >&2
+    # Deliberately fatal, but only after every other artifact has been pushed:
+    # a warning here let four answer packages stay frozen at a 2026-07-07 commit
+    # for three weeks while the job kept reporting success.
+    exit 1
 fi
