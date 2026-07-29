@@ -14,11 +14,6 @@
         "access_rules": [
           {
             "policy": "public",
-            "rule_path": "public-deployer-aws-vm",
-            "tenant": "default"
-          },
-          {
-            "policy": "public",
             "rule_path": "redbutton-demo-pack",
             "tenant": "default"
           }
@@ -26,27 +21,17 @@
         "advanced_setup": false,
         "app_pack_entries": [
           {
-            "detected_kind": "local_dir",
+            "detected_kind": "https",
             "display_name": "Redbutton Demo Pack",
             "mapping": {
               "scope": "global"
             },
             "pack_id": "redbutton-demo-pack",
-            "reference": "packs/redbutton-demo.pack"
-          },
-          {
-            "detected_kind": "local_file",
-            "display_name": "Public Deployer Aws Vm",
-            "mapping": {
-              "scope": "global"
-            },
-            "pack_id": "public-deployer-aws-vm",
-            "reference": "public-deployer-aws-vm"
+            "reference": "https://github.com/greenticai/greentic-demo/releases/latest/download/redbutton-demo.gtpack"
           }
         ],
         "app_packs": [
-          "packs/redbutton-demo.pack",
-          "public-deployer-aws-vm"
+          "https://github.com/greenticai/greentic-demo/releases/latest/download/redbutton-demo.gtpack"
         ],
         "bundle_id": "redbutton-demo",
         "bundle_name": "redbutton-demo",

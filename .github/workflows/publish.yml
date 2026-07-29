@@ -393,6 +393,32 @@ jobs:
             fi
           done
 
+          # Reverse direction: every pack URL an answers doc points at must be
+          # an asset that actually exists on this release. The loops above only
+          # check that local demos/* files got uploaded — they cannot see a
+          # reference to a pack that was never built. That gap is how the
+          # 1.1.6 answers docs shipped pointing at four 404s, which users hit
+          # as `wizard step command failed` on `[1/N] Resolving app pack`.
+          while IFS=$'\t' read -r answers ref; do
+            [[ -n "$ref" ]] || continue
+            name="${ref##*/}"
+            if ! grep -Fxq "$name" <<<"$release_assets"; then
+              echo "Dangling pack reference in $(basename "$answers"): $ref" >&2
+              echo "  no release asset named '$name'" >&2
+              missing=1
+            fi
+          done < <(
+            for answers in demos/*-create-answers.json; do
+              jq -r --arg f "$answers" '
+                [ (.answers.delegate_answer_document.answers.app_packs // [])[],
+                  (.answers.delegate_answer_document.answers.app_pack_entries // [])[].reference ]
+                | unique[]
+                | select(startswith("https://"))
+                | $f + "\t" + .
+              ' "$answers"
+            done
+          )
+
           if [[ "$missing" -ne 0 ]]; then
             exit 1
           fi
