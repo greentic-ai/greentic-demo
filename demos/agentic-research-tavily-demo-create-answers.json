@@ -40,6 +40,7 @@
           }
         ],
         "app_packs": [
+          "https://github.com/greenticai/greentic-demo/releases/latest/download/agentic-research-tavily-agent.gtpack",
           "https://github.com/greenticai/greentic-demo/releases/latest/download/agentic-research-tavily-demo.gtpack"
         ],
         "bundle_id": "agentic-research-tavily-demo-bundle",
