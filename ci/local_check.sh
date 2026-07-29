@@ -39,7 +39,11 @@ step "demo answer URLs"
 python3 scripts/test_demo_json_remote_urls.py
 
 step "OCI publish scripts"
-bash scripts/test_publish_demo_oci_scripts.sh
+if need jq; then
+    bash scripts/test_publish_demo_oci_scripts.sh
+else
+    echo "[warn] jq missing; skipping OCI publish script tests (CI runners always have it)"
+fi
 
 step "cargo metadata"
 cargo metadata --format-version 1 --no-deps >/dev/null
