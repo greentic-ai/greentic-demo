@@ -899,7 +899,11 @@ detect_missing_app_packs() {
         declared="$(jq -r '.answers.delegate_answer_document.answers.app_packs | length' "$source_answers")"
         [ "$declared" -gt 0 ] || continue
 
+        # deep-research ships two create-answers docs (plain and `-aws`) that
+        # both name bundle_id `deep-research-demo-bundle`, so this loop reaches
+        # the same bundle twice; unsquashfs refuses a target dir that exists.
         extract_dir="$check_dir/$bundle_id"
+        rm -rf "$extract_dir"
         if ! unsquashfs -no-progress -quiet -d "$extract_dir" "$bundle" >/dev/null 2>&1; then
             echo "Warning: app-pack check could not extract ${bundle_id}.gtbundle" >&2
             continue
