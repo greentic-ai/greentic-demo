@@ -318,6 +318,18 @@ jobs:
           TAG: latest
         run: scripts/verify_public_answer_refs.sh
 
+      # Same reasoning as the answers check, plus a staleness check: bundle
+      # publication is opt-in, so `:latest` silently keeps serving the previous
+      # push. This compares the published layer digest against the bundle built
+      # in this run, which is what `op env apply` / `gtc start --target gcp`
+      # actually resolve.
+      - name: Verify bundle artifacts are anonymously pullable and current
+        if: steps.artifacts.outputs.found == 'true' && github.event_name == 'workflow_dispatch' && inputs.publish_bundles == true && (github.ref_name == 'main' || github.ref_name == 'master')
+        env:
+          OWNER: ${{ github.repository_owner }}
+          TAG: latest
+        run: scripts/verify_public_bundle_refs.sh
+
       - name: Upload pack refs
         if: steps.artifacts.outputs.found == 'true'
         uses: actions/upload-artifact@v4

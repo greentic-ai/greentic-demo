@@ -864,19 +864,44 @@ if ! detect_provider_drift; then
     exit 1
 fi
 
-# Completeness gate: a bundle must physically contain one `packs/*.gtpack` per
+# Shape + completeness gate over every built bundle, in one extraction pass.
+#
+# Shape: a `.gtbundle` must carry `bundle-manifest.json` at its root and must
+# NOT carry workspace-only entries. When a create-answers document asks for
+# `locks.execution: "dry_run"` the wizard never emits `dist/<id>.gtbundle`, so
+# the `run_bundle_build` fallback above squashes the raw wizard *workspace*
+# instead — logs, state, `.providers/` config envelopes and all. The result is
+# a plausible-looking archive that `op env apply` rejects with "extracted tree
+# has no bundle-manifest.json", and it exits 0 all the way through publish.
+# cloud-deploy-demo shipped that way from 2026-04-26 until this gate landed.
+#
+# Completeness: a bundle must physically contain one `packs/*.gtpack` per
 # `app_packs` entry it declares. `greentic-bundle` currently DROPS an app pack
 # it cannot resolve and still exits 0, so an unresolvable reference produces a
 # bundle with no application in it and a green pipeline. That shipped: 1.1.6
 # released quickstart-event/greentic-ai/cloud-deploy/redbutton bundles holding
 # nothing but provider packs. Compare declared against embedded and fail loudly.
-detect_missing_app_packs() {
+#
+# Workspace-only root entries. `dist/` is the wizard's own output directory and
+# `bundle.lock.json` (dot) is the workspace lock; a built bundle carries
+# `bundle-lock.json` (dash) instead.
+BUNDLE_WORKSPACE_ONLY_ENTRIES=(
+    logs
+    state
+    dist
+    .greentic
+    .providers
+    greentic.demo.yaml
+    bundle.lock.json
+)
+
+verify_built_bundles() {
     local check_dir="$TMP_ROOT/app-pack-check"
     rm -rf "$check_dir"
     mkdir -p "$check_dir"
 
     if ! command -v unsquashfs >/dev/null 2>&1; then
-        echo "Warning: skipping app-pack completeness check — unsquashfs not found." >&2
+        echo "Warning: skipping bundle shape/completeness checks — unsquashfs not found." >&2
         echo "         Install squashfs-tools to enable this verification gate." >&2
         return 0
     fi
@@ -885,6 +910,7 @@ detect_missing_app_packs() {
     local source_answers
     for source_answers in "${bundle_answers[@]}"; do
         local demo_basename bundle_id bundle declared embedded extract_dir
+        local leaked entry
         demo_basename="$(basename "$source_answers" -create-answers.json)"
         bundle_id="$(jq -r '.answers.delegate_answer_document.answers.bundle_id // empty' "$source_answers")"
         [ -n "$bundle_id" ] || continue
@@ -897,7 +923,6 @@ detect_missing_app_packs() {
         [ -f "$bundle" ] || continue
 
         declared="$(jq -r '.answers.delegate_answer_document.answers.app_packs | length' "$source_answers")"
-        [ "$declared" -gt 0 ] || continue
 
         # deep-research ships two create-answers docs (plain and `-aws`) that
         # both name bundle_id `deep-research-demo-bundle`, so this loop reaches
@@ -905,15 +930,32 @@ detect_missing_app_packs() {
         extract_dir="$check_dir/$bundle_id"
         rm -rf "$extract_dir"
         if ! unsquashfs -no-progress -quiet -d "$extract_dir" "$bundle" >/dev/null 2>&1; then
-            echo "Warning: app-pack check could not extract ${bundle_id}.gtbundle" >&2
+            echo "  ${bundle_id}.gtbundle: not readable as a SquashFS image" >&2
+            failed=1
             continue
+        fi
+
+        if [ ! -f "$extract_dir/bundle-manifest.json" ]; then
+            echo "  ${bundle_id}.gtbundle: no bundle-manifest.json at its root" >&2
+            echo "      this is a wizard workspace, not a built bundle;" >&2
+            echo "      set locks.execution to \"execute\" in ${demo_basename}-create-answers.json" >&2
+            failed=1
+        fi
+
+        leaked=""
+        for entry in "${BUNDLE_WORKSPACE_ONLY_ENTRIES[@]}"; do
+            [ -e "$extract_dir/$entry" ] && leaked="${leaked}${entry} "
+        done
+        if [ -n "$leaked" ]; then
+            echo "  ${bundle_id}.gtbundle: leaks workspace-only entries: ${leaked}" >&2
+            failed=1
         fi
 
         # Application packs land under `packs/`; `providers/` holds the
         # extension providers and must not be counted here.
         embedded="$(find "$extract_dir/packs" -maxdepth 1 -name '*.gtpack' 2>/dev/null | wc -l | tr -d ' ')"
 
-        if [ "$embedded" -lt "$declared" ]; then
+        if [ "$declared" -gt 0 ] && [ "$embedded" -lt "$declared" ]; then
             echo "  ${bundle_id}.gtbundle: declares ${declared} app pack(s), contains ${embedded}" >&2
             jq -r '.answers.delegate_answer_document.answers.app_packs[]
                    | "      declared: " + .' "$source_answers" >&2
@@ -923,17 +965,20 @@ detect_missing_app_packs() {
 
     if [ "$failed" -ne 0 ]; then
         echo "" >&2
-        echo "Bundles are missing application packs they declare." >&2
+        echo "One or more built bundles are malformed or incomplete (see above)." >&2
+        echo "A bundle that is missing bundle-manifest.json is a wizard workspace:" >&2
+        echo "the create-answers document asked for a dry_run, so nothing was built" >&2
+        echo "and the raw workspace got squashed instead. op env apply rejects it." >&2
         echo "An app pack reference that cannot be resolved is dropped silently," >&2
-        echo "so this almost always means the referenced artifact does not exist." >&2
-        echo "Check that each app_packs entry in demos/*-create-answers.json points" >&2
-        echo "at a pack that is actually published." >&2
+        echo "so a short pack count almost always means the referenced artifact" >&2
+        echo "does not exist. Check that each app_packs entry in" >&2
+        echo "demos/*-create-answers.json points at a pack that is actually published." >&2
         return 1
     fi
 
     return 0
 }
 
-if ! detect_missing_app_packs; then
+if ! verify_built_bundles; then
     exit 1
 fi
