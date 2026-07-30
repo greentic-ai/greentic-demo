@@ -1,6 +1,6 @@
 {
-  "env": "dev",
-  "tenant": "demo",
+  "env": "local",
+  "tenant": "default",
   "team": "default",
   "platform_setup": {
     "static_routes": {
@@ -36,7 +36,6 @@
       "skin": "3aigent",
       "tenant_channel_id": "demo:webchat"
     },
-    "state-memory": {},
     "deep-research-demo": {
       "provider": "openai",
       "url": "https://api.openai.com/v1",

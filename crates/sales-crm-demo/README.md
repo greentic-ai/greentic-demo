@@ -22,6 +22,11 @@ Demo pack for Salesforce OAuth integration with MCP tools for lead qualification
 | Microsoft Teams | Optional |
 | Webex | Optional |
 
+Only the Required row is vendored in the bundle. The Optional channels are
+added to a running environment with `gtc provider add <kind>` — a channel with
+no credentials cannot connect, so shipping its pack would only inflate the
+download.
+
 ## Prerequisites
 
 1. **Salesforce Connected App**: Create a Connected App in Salesforce Setup
@@ -152,7 +157,7 @@ The pack uses the following MCP tools:
 ### AWS Deployment
 
 ```bash
-gtc start ./sales-crm --deploy aws
+gtc start ./sales-crm --target aws
 ```
 
 ### Local Development

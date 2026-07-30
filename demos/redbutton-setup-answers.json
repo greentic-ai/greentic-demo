@@ -1,6 +1,6 @@
 {
   "bundle_source": "crates/redbutton-demo/bundle",
-  "env": "dev",
+  "env": "local",
   "greentic_setup_version": "1.0.0",
   "platform_setup": {
     "static_routes": {
@@ -11,8 +11,7 @@
     }
   },
   "setup_answers": {
-    "greentic.events.webhook": {},
-    "state-memory": {}
+    "greentic.events.webhook": {}
   },
   "team": null,
   "tenant": "default"

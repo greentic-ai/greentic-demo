@@ -1,6 +1,6 @@
 {
   "greentic_setup_version": "1.0.0",
-  "env": "dev",
+  "env": "local",
   "bundle_source": ".",
   "platform_setup": {
     "deployment_targets": [],
@@ -19,9 +19,8 @@
       "public_base_url": "http://localhost:8080",
       "route": "webchat",
       "tenant_channel_id": "demo-default"
-    },
-    "state-memory": {}
+    }
   },
-  "tenant": "demo",
+  "tenant": "default",
   "team": "default"
 }

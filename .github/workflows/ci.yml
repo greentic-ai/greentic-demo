@@ -14,3 +14,23 @@ jobs:
     uses: greenticai/.github/.github/workflows/pr-ci.yml@main
     with:
       variant: host
+
+  # The shared pr-ci reusable runs fmt + clippy + test + build and nothing else,
+  # so every gate in `ci/local_check.sh` was local-only: a green PR proved the
+  # Rust workspace compiled and said nothing about the demo answer documents.
+  # That is how the gates guarding the app-pack silent drop (#252), the OCI
+  # publish scripts (#254) and provider minimalism (#255) all shipped without CI
+  # ever executing them. These checks need no toolchain, so run them directly.
+  answer-docs:
+    name: Answer document gates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: demo answer URLs
+        run: python3 scripts/test_demo_json_remote_urls.py
+      - name: demo provider minimalism
+        run: python3 scripts/test_demo_provider_minimalism.py
+      - name: demo bundle build mode
+        run: python3 scripts/test_demo_bundle_build_mode.py
+      - name: OCI publish scripts
+        run: bash scripts/test_publish_demo_oci_scripts.sh

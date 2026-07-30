@@ -46,13 +46,6 @@
           },
           {
             "detected_kind": "oci",
-            "display_name": "Greentic State Memory (latest)",
-            "provider_id": "state-memory",
-            "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
-            "version": "latest"
-          },
-          {
-            "detected_kind": "oci",
             "display_name": "Greentic Events Webhook",
             "provider_id": "greentic.events.webhook",
             "reference": "oci://ghcr.io/greenticai/packs/events/events-webhook:stable",
@@ -61,7 +54,6 @@
         ],
         "extension_providers": [
           "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
-          "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
           "oci://ghcr.io/greenticai/packs/events/events-webhook:stable"
         ],
         "mode": "create",
@@ -74,7 +66,7 @@
       "locks": {
         "cache_policy": "workspace-local",
         "catalogs": [],
-        "execution": "dry_run",
+        "execution": "execute",
         "lock_file": "bundle.lock.json",
         "requested_mode": "create",
         "setup_state_files": [],

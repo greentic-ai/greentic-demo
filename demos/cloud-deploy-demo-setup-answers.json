@@ -1,6 +1,6 @@
 {
-  "env": "dev",
-  "tenant": "demo",
+  "env": "local",
+  "tenant": "default",
   "team": "default",
   "platform_setup": {
     "static_routes": {
@@ -31,7 +31,6 @@
       "jwt_signing_key": "secret",
       "mode": "embedded",
       "public_base_url": "https://example.com"
-    },
-    "state-memory": {}
+    }
   }
 }

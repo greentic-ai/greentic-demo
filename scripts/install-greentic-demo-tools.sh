@@ -1,27 +1,24 @@
 #!/usr/bin/env bash
-# install-greentic-demo-tools.sh — install the two research binaries the
-# zero-env Tavily agentic-worker demo needs, WITHOUT building from source.
+# install-greentic-demo-tools.sh — install the two binaries the zero-env Tavily
+# agentic-worker demo needs, WITHOUT building from source.
 #
 #   ./install-greentic-demo-tools.sh                 # installs into ~/.cargo/bin
 #   PREFIX=/usr/local/bin ./install-greentic-demo-tools.sh
 #
-# Why two different install paths (this is the whole point of the script):
+# Both binaries now come off the STABLE lane. The script originally pinned
+# research pre-releases because greentic-start's agentic-worker graph pulled
+# greentic-aw-runtime from private research-branch git repos, which made it
+# un-publishable to crates.io. That is no longer true: stable greentic-start
+# depends on `greentic-aw-runtime = "=1.1.6"` from crates.io, so `dw.agent`
+# serves from a plain stable build and both binaries binstall normally.
 #
-#   greentic-setup  has no git/private deps -> its research build IS on crates.io
-#                   -> `cargo binstall greentic-setup@<ver>` resolves there.
-#
-#   greentic-start  pulls the agentic runtime (greentic-aw-runtime), which depends
-#                   on PRIVATE / research-branch git repos (greentic-dw, ...). That
-#                   makes it un-publishable to crates.io, and `cargo binstall --git`
-#                   only reads a repo's DEFAULT branch (master), not research. So we
-#                   fetch its prebuilt release tarball directly (curl + tar).
-#
-# Both crates publish identical GitHub-release assets:
+# The curl+tar path below is kept as a fallback for hosts without
+# cargo-binstall. Both crates publish identical GitHub-release assets:
 #   <name>-v<version>-<target>.tgz   (binary inside <name>-v<version>-<target>/)
 set -euo pipefail
 
-SETUP_VER="${SETUP_VER:-1.2.0-research.0}"
-START_VER="${START_VER:-1.2.0-research.2}"
+SETUP_VER="${SETUP_VER:-1.1.28}"
+START_VER="${START_VER:-1.1.37}"
 PREFIX="${PREFIX:-$HOME/.cargo/bin}"
 ORG="greenticai"
 
@@ -83,8 +80,14 @@ else
   install_via_curl greentic-setup "$SETUP_VER"
 fi
 
-# ---- greentic-start: curl+tar only (not on crates.io; see header) ----------
-install_via_curl greentic-start "$START_VER"
+# ---- greentic-start: prefer crates.io binstall, fall back to curl+tar -------
+if have cargo-binstall; then
+  echo "→ greentic-start: cargo binstall @${START_VER} (crates.io)"
+  cargo binstall -y --install-path "$PREFIX" "greentic-start@${START_VER}" \
+    || { echo "  binstall failed, falling back to release tarball"; install_via_curl greentic-start "$START_VER"; }
+else
+  install_via_curl greentic-start "$START_VER"
+fi
 
 # ---- verify + PATH hint -----------------------------------------------------
 echo ""
@@ -98,4 +101,4 @@ esac
 echo ""
 echo "Next: configure + start a demo bundle, e.g.:"
 echo "  greentic-setup ./agentic-research-tavily-demo-bundle"
-echo "  greentic-start start --bundle ./agentic-research-tavily-demo-bundle --tenant demo --nats off --cloudflared off"
+echo "  greentic-start start --bundle ./agentic-research-tavily-demo-bundle --nats off --cloudflared off"

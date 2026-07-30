@@ -184,23 +184,29 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           SHA: ${{ github.sha }}
           PUBLISH_VERSION: ${{ needs.resolve-version.outputs.publish_version }}
+          # GHCR links a package to a repository from this annotation. Without
+          # it a brand-new package is created unlinked, which makes it
+          # unwritable by any repository's GITHUB_TOKEN on every later push and
+          # leaves it private to anonymous pulls.
+          SOURCE_REPO_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
           set -euo pipefail
+          source_annotation="org.opencontainers.image.source=${SOURCE_REPO_URL}"
           while IFS= read -r pack_dir; do
             pack_name="$(basename "$pack_dir" .pack)"
             echo "Publishing ${pack_name}..."
             cd "$pack_dir"
             sha_ref="ghcr.io/${OWNER}/packs/apps/${pack_name}:${SHA}"
-            oras push "$sha_ref" .
+            oras push --annotation "$source_annotation" "$sha_ref" .
             echo "  -> ${sha_ref}"
             if [[ -n "${PUBLISH_VERSION}" ]]; then
               version_ref="ghcr.io/${OWNER}/packs/apps/${pack_name}:${PUBLISH_VERSION}"
-              oras push "$version_ref" .
+              oras push --annotation "$source_annotation" "$version_ref" .
               echo "  -> ${version_ref}"
             fi
             if [[ "${GITHUB_REF_TYPE}" == "tag" || "${GITHUB_REF_NAME}" == "main" || "${GITHUB_REF_NAME}" == "master" ]]; then
               latest_ref="ghcr.io/${OWNER}/packs/apps/${pack_name}:latest"
-              oras push "$latest_ref" .
+              oras push --annotation "$source_annotation" "$latest_ref" .
               echo "  -> ${latest_ref}"
             fi
             cd - > /dev/null
@@ -235,12 +241,17 @@ jobs:
       # Authenticated pulls use the workflow's GITHUB_TOKEN quota and pick
       # up creds from ~/.docker/config.json written by `oras login` above.
       - name: Install gtc
-        # Pin the stable toolchain release. A bare `gtc install` resolves the
-        # `latest` channel, which currently ships greentic-pack 1.1.0-dev — that
-        # build neither compiles the `agents:` block from pack.yaml nor bundles
-        # `assets/setup.yaml`, so demo packs ship without their AgentConfig or
-        # B12a setup metadata. Release 1.1.2 pins greentic-pack 1.1.4, which does.
-        run: cargo binstall -y gtc && gtc install --release 1.1.2
+        # Pin the stable toolchain release explicitly rather than relying on a
+        # bare `gtc install`, so a CI run is reproducible and moves only when
+        # this line moves.
+        #
+        # 1.1.13 pins greentic-pack 1.1.5, which compiles the `agents:` block
+        # from pack.yaml and bundles `assets/setup.yaml` — the two things demo
+        # packs need for their AgentConfig and B12a setup metadata. (The older
+        # 1.1.2 pin here was chosen for the same reason, back when the `latest`
+        # channel still resolved a greentic-pack 1.1.0-dev build that did
+        # neither. `latest`, `stable` and `1.1.13` are one digest today.)
+        run: cargo binstall -y gtc && gtc install --release 1.1.13
 
       - name: Package demos
         run: scripts/package_demos.sh
@@ -295,6 +306,29 @@ jobs:
           PUBLISH_VERSION: ${{ needs.resolve-version.outputs.publish_version }}
           PUBLISH_BUNDLES: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_bundles == true && '1' || '0' }}
         run: scripts/publish_demo_artifacts_oci.sh
+
+      # Pushing and anonymous pulling are different permissions, so a green
+      # publish step says nothing about whether users can actually resolve
+      # `gtc wizard --answers oci://…`. Check that separately, unauthenticated.
+      # Only meaningful on the branch that owns the :latest tag.
+      - name: Verify answers artifacts are anonymously pullable
+        if: steps.artifacts.outputs.found == 'true' && (github.ref_name == 'main' || github.ref_name == 'master')
+        env:
+          OWNER: ${{ github.repository_owner }}
+          TAG: latest
+        run: scripts/verify_public_answer_refs.sh
+
+      # Same reasoning as the answers check, plus a staleness check: bundle
+      # publication is opt-in, so `:latest` silently keeps serving the previous
+      # push. This compares the published layer digest against the bundle built
+      # in this run, which is what `op env apply` / `gtc start --target gcp`
+      # actually resolve.
+      - name: Verify bundle artifacts are anonymously pullable and current
+        if: steps.artifacts.outputs.found == 'true' && github.event_name == 'workflow_dispatch' && inputs.publish_bundles == true && (github.ref_name == 'main' || github.ref_name == 'master')
+        env:
+          OWNER: ${{ github.repository_owner }}
+          TAG: latest
+        run: scripts/verify_public_bundle_refs.sh
 
       - name: Upload pack refs
         if: steps.artifacts.outputs.found == 'true'
@@ -387,6 +421,32 @@ jobs:
               missing=1
             fi
           done
+
+          # Reverse direction: every pack URL an answers doc points at must be
+          # an asset that actually exists on this release. The loops above only
+          # check that local demos/* files got uploaded — they cannot see a
+          # reference to a pack that was never built. That gap is how the
+          # 1.1.6 answers docs shipped pointing at four 404s, which users hit
+          # as `wizard step command failed` on `[1/N] Resolving app pack`.
+          while IFS=$'\t' read -r answers ref; do
+            [[ -n "$ref" ]] || continue
+            name="${ref##*/}"
+            if ! grep -Fxq "$name" <<<"$release_assets"; then
+              echo "Dangling pack reference in $(basename "$answers"): $ref" >&2
+              echo "  no release asset named '$name'" >&2
+              missing=1
+            fi
+          done < <(
+            for answers in demos/*-create-answers.json; do
+              jq -r --arg f "$answers" '
+                [ (.answers.delegate_answer_document.answers.app_packs // [])[],
+                  (.answers.delegate_answer_document.answers.app_pack_entries // [])[].reference ]
+                | unique[]
+                | select(startswith("https://"))
+                | $f + "\t" + .
+              ' "$answers"
+            done
+          )
 
           if [[ "$missing" -ne 0 ]]; then
             exit 1

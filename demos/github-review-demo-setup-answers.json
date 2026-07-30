@@ -1,6 +1,6 @@
 {
   "bundle_source": ".",
-  "env": "dev",
+  "env": "local",
   "greentic_setup_version": "1.0.0",
   "platform_setup": {
     "deployment_targets": [],
@@ -24,7 +24,6 @@
       "route": "webchat",
       "tenant_channel_id": "demo:webchat"
     },
-    "state-memory": {},
     "github-review-pack": {
       "auth.oauth2.githubOAuth.client_id": "",
       "auth.oauth2.githubOAuth.client_secret": "",
@@ -32,5 +31,5 @@
     }
   },
   "team": "default",
-  "tenant": "demo"
+  "tenant": "default"
 }

@@ -1,6 +1,6 @@
 {
   "bundle_source": ".",
-  "env": "dev",
+  "env": "local",
   "greentic_setup_version": "1.0.0",
   "platform_setup": {
     "deployment_targets": [],
@@ -37,9 +37,8 @@
       "account_sid": "AC00000000000000000000000000000000",
       "auth_token": "demo-auth-token-not-real",
       "from_number": "+10000000000"
-    },
-    "state-memory": {}
+    }
   },
   "team": null,
-  "tenant": "demo"
+  "tenant": "default"
 }

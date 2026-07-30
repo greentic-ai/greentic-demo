@@ -1,6 +1,6 @@
 {
   "bundle_source": ".",
-  "env": "dev",
+  "env": "local",
   "greentic_setup_version": "1.0.0",
   "platform_setup": {
     "deployment_targets": [],
@@ -26,21 +26,11 @@
       "tenant_channel_id": "demo:webchat",
       "webchat_token": "agentic-research-tavily-demo-local-dev-webchat-token"
     },
-    "messaging-webchat": {
-      "base_url": "http://127.0.0.1:8080",
-      "jwt_signing_key": "agentic-research-tavily-demo-local-dev-signing-key",
-      "mode": "local_queue",
-      "public_base_url": "http://127.0.0.1:8080",
-      "route": "webchat",
-      "tenant_channel_id": "demo:webchat",
-      "webchat_token": "agentic-research-tavily-demo-local-dev-webchat-token"
-    },
-    "state-memory": {},
     "agentic-research-tavily-agent": {
       "llm_deepseek": "${GREENTIC_LLM_API_KEY}",
       "tavily_api_key": "${TAVILY_API_KEY}"
     }
   },
   "team": "default",
-  "tenant": "demo"
+  "tenant": "default"
 }

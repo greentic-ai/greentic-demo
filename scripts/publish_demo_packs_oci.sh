@@ -9,6 +9,10 @@ OWNER="${OWNER:?OWNER is required}"
 TAG="${TAG:-}"
 PUBLISH_LATEST="${PUBLISH_LATEST:-0}"
 PACK_MEDIA_TYPE="application/vnd.greentic.gtpack.v1+zip"
+# See publish_demo_artifacts_oci.sh: GHCR links a package to a repository from
+# this annotation, and an unlinked package is neither writable by CI nor
+# publicly pullable.
+SOURCE_REPO_URL="${SOURCE_REPO_URL:-https://github.com/${GITHUB_REPOSITORY:-${OWNER}/greentic-demo}}"
 
 require_command() {
     local command_name="$1"
@@ -53,7 +57,9 @@ for pack_path in "${packs[@]}"; do
     for tag in "${publish_tags[@]}"; do
         ref="ghcr.io/${OWNER}/packs/demos/${pack_name}:${tag}"
         echo "Publishing ${pack_path} -> ${ref}"
-        oras push --disable-path-validation --artifact-type "$PACK_MEDIA_TYPE" "$ref" "${pack_path}:${PACK_MEDIA_TYPE}"
+        oras push --disable-path-validation \
+            --annotation "org.opencontainers.image.source=${SOURCE_REPO_URL}" \
+            --artifact-type "$PACK_MEDIA_TYPE" "$ref" "${pack_path}:${PACK_MEDIA_TYPE}"
         echo "${pack_name}_${tag}=oci://${ref}" >> "$ARTIFACTS_DIR/pack-refs.txt"
         echo "oci://${ref}"
     done
