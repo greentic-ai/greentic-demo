@@ -38,6 +38,9 @@ cargo --version
 step "demo answer URLs"
 python3 scripts/test_demo_json_remote_urls.py
 
+step "demo provider minimalism"
+python3 scripts/test_demo_provider_minimalism.py
+
 step "OCI publish scripts"
 if need jq; then
     bash scripts/test_publish_demo_oci_scripts.sh

@@ -24,7 +24,6 @@
       "route": "webchat",
       "tenant_channel_id": "demo:webchat"
     },
-    "state-memory": {},
     "github-review-pack": {
       "auth.oauth2.githubOAuth.client_id": "",
       "auth.oauth2.githubOAuth.client_secret": "",

@@ -71,8 +71,31 @@ provides the UI; the built-in console is only served when none does. Pass
 `--open-webchat` to `gtc start` to open the default bundle in your browser, or
 `--open-webchat=<bundle-id>` for a specific one.
 
-To add a messaging provider to a running environment without rebuilding the
-bundle, use `gtc provider add|list|remove`.
+## Adding a messaging channel
+
+Every demo bundle ships **only the providers it configures** — in practice the
+webchat GUI, plus whatever that demo actually wires up (Webex for `incident`,
+the four event providers for `quickstart-event`, seven channels for
+`greentic-ai`). Slack, Teams, Telegram and Webex are not vendored into the rest,
+because a channel with no credentials cannot connect to anything and the pack
+would only inflate the download: dropping three unconfigured channels took
+`quickstart-demo.gtbundle` from 11.2 MB to 2.8 MB.
+
+Add one to a running environment — no rebuild, no new bundle. These act on the
+**environment** (`--env`, default `local`), not on a bundle directory, and
+`add` takes a provider *kind*:
+
+```bash
+gtc provider add slack          # kind: telegram | slack | webex | teams
+gtc provider list               # -> {"endpoints":[...]} — the endpoint ids
+gtc provider remove <ENDPOINT_ID>
+```
+
+`provider add` resolves the pack, collects its setup answers, and stages a new
+revision with the pack injected. Compose your own bundles the same way: vendor
+the application and the channels you configure, and leave the rest to
+`provider add`. `scripts/test_demo_provider_minimalism.py` enforces this on
+every demo in CI.
 
 ## Available Demos
 

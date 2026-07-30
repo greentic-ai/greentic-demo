@@ -20,6 +20,11 @@ Demo pack for inventory monitoring, order tracking, and automated reorder manage
 | Slack | Optional |
 | Microsoft Teams | Optional |
 
+Only the Required row is vendored in the bundle. The Optional channels are
+added to a running environment with `gtc provider add <kind>` — a channel with
+no credentials cannot connect, so shipping its pack would only inflate the
+download.
+
 ## Prerequisites
 
 1. **Inventory API Key**: Obtain an API key for your inventory management system
