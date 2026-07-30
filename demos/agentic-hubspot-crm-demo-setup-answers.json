@@ -25,16 +25,7 @@
       "public_base_url": "http://127.0.0.1:8080",
       "route": "webchat",
       "tenant_channel_id": "demo:webchat"
-    },
-    "messaging-webchat": {
-      "base_url": "http://127.0.0.1:8080",
-      "jwt_signing_key": "agentic-hubspot-crm-demo-local-dev-signing-key",
-      "mode": "local_queue",
-      "public_base_url": "http://127.0.0.1:8080",
-      "route": "webchat",
-      "tenant_channel_id": "demo:webchat"
-    },
-    "state-memory": {}
+    }
   },
   "team": "default",
   "tenant": "default"

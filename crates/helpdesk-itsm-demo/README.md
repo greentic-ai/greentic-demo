@@ -21,6 +21,11 @@ Demo pack for IT Helpdesk / ITSM integration with Jira via OAuth and MCP (Model 
 | Slack | Optional |
 | Microsoft Teams | Optional |
 
+Only the Required row is vendored in the bundle. The Optional channels are
+added to a running environment with `gtc provider add <kind>` — a channel with
+no credentials cannot connect, so shipping its pack would only inflate the
+download.
+
 ## Prerequisites
 
 1. **Jira (Atlassian) OAuth App**: Create an OAuth 2.0 integration at https://developer.atlassian.com/console/myapps/

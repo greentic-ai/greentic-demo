@@ -12,14 +12,6 @@
     }
   },
   "setup_answers": {
-    "messaging-slack": {
-      "api_base_url": "https://slack.com/api",
-      "default_channel": "general",
-      "public_base_url": "http://localhost:8080",
-      "slack_app_id": "A0000000000",
-      "slack_bot_token": "",
-      "slack_configuration_token": ""
-    },
     "messaging-teams": {
       "channel_id": "19:demo-channel-id@thread.tacv2",
       "ms_bot_app_id": "00000000-0000-0000-0000-000000000000",
@@ -80,8 +72,7 @@
       "ms_graph_client_secret": "demo-greentic-ai-graph-secret-not-real",
       "ms_graph_refresh_token": "demo-greentic-ai-graph-refresh-token-not-real",
       "public_base_url": "http://localhost:8080"
-    },
-    "state-memory": {}
+    }
   },
   "team": null,
   "tenant": "default"

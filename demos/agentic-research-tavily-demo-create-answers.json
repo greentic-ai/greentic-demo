@@ -56,26 +56,10 @@
             "provider_id": "greentic.messaging.webchat-gui.stable",
             "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
             "version": "stable"
-          },
-          {
-            "detected_kind": "oci",
-            "display_name": "Greentic Messaging Webchat (stable)",
-            "provider_id": "greentic.messaging.webchat.stable",
-            "reference": "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:stable",
-            "version": "stable"
-          },
-          {
-            "detected_kind": "oci",
-            "display_name": "Greentic State Memory (stable)",
-            "provider_id": "state-memory",
-            "reference": "oci://ghcr.io/greenticai/packs/state/state-memory:stable",
-            "version": "stable"
           }
         ],
         "extension_providers": [
-          "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable",
-          "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat:stable",
-          "oci://ghcr.io/greenticai/packs/state/state-memory:stable"
+          "oci://ghcr.io/greenticai/packs/messaging/messaging-webchat-gui:stable"
         ],
         "mode": "create",
         "output_dir": "agentic-research-tavily-demo-bundle",
