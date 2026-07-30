@@ -30,5 +30,7 @@ jobs:
         run: python3 scripts/test_demo_json_remote_urls.py
       - name: demo provider minimalism
         run: python3 scripts/test_demo_provider_minimalism.py
+      - name: demo bundle build mode
+        run: python3 scripts/test_demo_bundle_build_mode.py
       - name: OCI publish scripts
         run: bash scripts/test_publish_demo_oci_scripts.sh
