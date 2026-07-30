@@ -41,6 +41,9 @@ python3 scripts/test_demo_json_remote_urls.py
 step "demo provider minimalism"
 python3 scripts/test_demo_provider_minimalism.py
 
+step "demo bundle build mode"
+python3 scripts/test_demo_bundle_build_mode.py
+
 step "OCI publish scripts"
 if need jq; then
     bash scripts/test_publish_demo_oci_scripts.sh
