@@ -27,8 +27,8 @@
       "webchat_token": "agentic-research-tavily-demo-local-dev-webchat-token"
     },
     "agentic-research-tavily-agent": {
-      "llm_deepseek": "${GREENTIC_LLM_API_KEY}",
-      "tavily_api_key": "${TAVILY_API_KEY}"
+      "deepseek": "${GREENTIC_LLM_API_KEY}",
+      "api_key": "${TAVILY_API_KEY}"
     }
   },
   "team": "default",
